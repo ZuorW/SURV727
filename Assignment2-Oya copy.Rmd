@@ -109,7 +109,7 @@ res_2 %>%
 res_2$interest_over_time %>% 
   group_by(keyword) %>% 
   summarize(mean_hits = mean(hits),
-            sd_hits = sd(hits),
+            median_hits = median(hits),
             var_hits = var(hits))
 ```
 
@@ -231,7 +231,12 @@ acs_with_loc %>%
 # Merge ACS to gtrends data by city only keeping cases that match
 merged <-
   wide %>% 
+<<<<<<< HEAD
   inner_join(acs_with_loc, by = "location")
+=======
+  left_join(acs_with_loc, by = "location")
+# should we use left_join or inner_join here?
+>>>>>>> 8b14667251440d22588929dc29aab0dc0e141c4c
 
 merged %>% 
   head()
