@@ -233,6 +233,7 @@ acs_with_loc %>%
 merged <-
   wide %>% 
   left_join(acs_with_loc, by = "location")
+# should we use left_join or inner_join here?
 
 merged %>% 
   head()
