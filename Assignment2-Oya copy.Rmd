@@ -16,7 +16,7 @@ library(gtrendsR)
 library(censusapi)
 ```
 
-## Github link = (include link)
+## Github link = https://github.com/ZuorW/SURV727.git
 
 \
 In this assignment, you will pull from APIs to get data from various data sources and use your data wrangling skills to use them all together. You should turn in a report in PDF or HTML format that addresses all of the questions in this assignment, and describes the data that you pulled and analyzed. You do not need to include full introduction and conclusion sections like a full report, but you should make sure to answer the questions in paragraph form, and include all relevant tables and graphics.
@@ -49,11 +49,11 @@ res$interest_over_time %>%
 res$interest_over_time %>% 
   group_by(keyword) %>% 
   summarize(mean_hits = mean(hits),
-            sd_hits = sd(hits),
+            median = median(hits),
             var_hits = var(hits))
 ```
 
-The keyword `crime` had a mean search hit of 55.615 with a standard deviation of 9.282 and a variance of 86.163. The keyword `loans` had a mean search hit of 67.231 with a standard deviation of 9.924 and a variance of 98.495.\
+The keyword `crime` had a mean search hit of 55.615 with a median of 53.5 and a variance of 78.965 The keyword `loans` had a mean search hit of 67.231 with a median of 66.5 and a variance of 99.624\
 
 -   Which cities (locations) have the highest search frequency for `loans`? Note that there might be multiple rows for each city if there were hits for both "crime" and "loans" in that city. It might be easier to answer this question if we had the search hits info for both search terms in two separate variables. That is, each row would represent a unique city.
 
