@@ -246,7 +246,7 @@ merged %>%
 merged %>% 
   group_by(
     hhinc_med = 
-      ifelse(hh_income > median(hh_income, na.rm = TRUE), 
+      ifelse(hh_income > mean(hh_income, na.rm = TRUE), 
                        "above", "below")) %>% 
                        summarize(mean_crime = mean(crime, na.rm = TRUE),
                        mean_loans = mean(loans, na.rm = TRUE)) #code doesn't work if I don't use na.rm = T
