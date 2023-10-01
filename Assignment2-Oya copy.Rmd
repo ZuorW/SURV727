@@ -53,7 +53,7 @@ res$interest_over_time %>%
             var_hits = var(hits))
 ```
 
-The keyword `crime` had a mean search hit of 55.615 with a median of 53.5 and a variance of 78.965 The keyword `loans` had a mean search hit of 67.231 with a median of 66.5 and a variance of 99.624\
+The keyword `crime` had a mean search hit of 55.230 with a median of 53.5 and a variance of 78.965 The keyword `loans` had a mean search hit of 66.942 with a median of 66.5 and a variance of 99.624\
 
 -   Which cities (locations) have the highest search frequency for `loans`? Note that there might be multiple rows for each city if there were hits for both "crime" and "loans" in that city. It might be easier to answer this question if we had the search hits info for both search terms in two separate variables. That is, each row would represent a unique city.
 
@@ -79,8 +79,7 @@ wide %>%
   arrange(desc(loans)) %>% 
   head()
 ```
-
-The cities Long Lake, Erie, and Streamwood have the highest search frequency for `loans`.\
+The cities Granville, Alorton, and Bement have the highest search frequency for `loans`.\
 
 -   Is there a relationship between the search intensities between the two keywords we used?
 
@@ -232,10 +231,13 @@ acs_with_loc %>%
 # Merge ACS to gtrends data by city only keeping cases that match
 merged <-
   wide %>% 
-  left_join(acs_with_loc, by = "location")
+  inner_join(acs_with_loc, by = "location")
 
 merged %>% 
   head()
+
+ uni_acs_il <- acs_with_loc %>%
+       distinct(location)
 ```
 
 \
@@ -246,7 +248,7 @@ merged %>%
 merged %>% 
   group_by(
     hhinc_med = 
-      ifelse(hh_income > median(hh_income, na.rm = TRUE), 
+      ifelse(hh_income > mean(hh_income, na.rm = TRUE), 
                        "above", "below")) %>% 
                        summarize(mean_crime = mean(crime, na.rm = TRUE),
                        mean_loans = mean(loans, na.rm = TRUE)) #code doesn't work if I don't use na.rm = T
@@ -297,6 +299,7 @@ merged_2 %>%
                        summarize(mean_masks = mean(masks, na.rm = TRUE),
                        mean_deaths = mean(deaths, na.rm = TRUE)) #code doesn't work if I don't use na.rm = T
 ```
+
 ```{r}
 # Plot for masks
 qplot(hh_income, masks, data = merged_2)
