@@ -208,17 +208,18 @@ It seems like we could try to use this location information listed above to merg
 
 ```{r}
 # Check headers
-#acs_il %>% head()
+# acs_il %>% head()
 
-# Create new location variable
+# Create new location variable without city/village
 no_village <- gsub(' village, Illinois', '', acs_il$NAME) #remove "village, IL" from NAME and store
 no_cityvill <- gsub(' city, Illinois', '', no_village) #take above and remove remaining "city, IL"
 acs_with_loc <- 
   acs_il %>% 
   mutate(location = no_cityvill) #add new variable with only city names
 
-acs_with_loc %>% 
-  head()
+# Check headers
+# acs_with_loc %>% 
+#   head()
 ```
 
 ## Answer the following questions with the "crime" and "loans" Google trends data and the ACS data.
@@ -243,25 +244,24 @@ n = nrow(acs_with_loc) - nrow(merged) -(nrow(wide)-nrow(merged))
 n
 ```
 
-`n` = 1120 cities appear in both sets.
+`r n` cities do not appear in both sets.\
 
-\
 - Compute the mean of the search popularity for both keywords for cities that have an above average median household income and for those that have an below average median household income. When building your pipe, start with creating the grouping variable and then proceed with the remaining tasks. What conclusions might you draw from this?
 
 ```{r}
 # If household income is greater than its median, name group as above average, if not, name group as above average
 # Then compute mean by group
-merged %>% 
+bymedv <- merged %>% 
   group_by(
     hhinc_med = 
       ifelse(hh_income > mean(hh_income, na.rm = TRUE), 
                        "above", "below")) %>% 
                        summarize(mean_crime = mean(crime, na.rm = TRUE),
                        mean_loans = mean(loans, na.rm = TRUE))
-#code doesn't work if I don't use na.rm = T
+bymedv
 ```
 
-For cities that have an above average median household income, the search popularity of `crime` was 45.3 and 47.4 for `loans`. For cities that have a below average median household income, the search popularity of `crime` was 50.6 and 52.7 for `loans`. Those in cities with below average household income had a higher search rate for both keywords. We conclude that crime rates may be higher in below average cities which may lead to more search hits, and that people in these cities may search for `loans` more because more people in these cities may take out loans to support their lives due to a lower financial status.
+For cities that have an above average median household income, the search popularity of `crime` was `r bymedv[1,2]` and `r bymedv[1,3]` for `loans`. For cities that have a below average median household income, the search popularity of `crime` was `r bymedv[2,2]` and `r bymedv[2,3]` for `loans`. Cities with a below average household income had a higher search rate for both keywords. We conclude that crime rates may be higher in below average cities which may lead to more search hits for `crime`, and that people in these cities may search for `loans` more because there is a higher chance that they would take out loans to supplement their lower financial status.
 
 -   Is there a relationship between the median household income and the search popularity of the Google trends terms? Describe the relationship and use a scatterplot with `qplot()`.
 
@@ -274,7 +274,7 @@ qplot(hh_income, crime, data = merged)+
        x = "Median Household Income",y = "Search Popularity of crime")
 
 # Correlation test
-cor.test(merged$hh_income, merged$crime)
+cor3 <- cor.test(merged$hh_income, merged$crime)
 
 # Plot for loans
 qplot(hh_income, loans, data = merged) + 
@@ -284,10 +284,10 @@ qplot(hh_income, loans, data = merged) +
        x = "Median Household Income",y = "Search Popularity of loans")
  
 # Correlation test
-cor.test(merged$hh_income, merged$loans)
+cor4 <- cor.test(merged$hh_income, merged$loans)
 ```
 
-In the plot for the median household income and the search popularity of `crime`, much of the data is gathered in the lower half of the median household income but there is no clear pattern. A Pearson correlation test supports this by showing that there is no correlation between the two variables (r = -0.108, p = .352). On the other hand, the plot for `loans` shows a clear pattern in which higher search hits are centered around the lower end of median household income, suggesting a relationship between the two variables. We tested this relationship using a Pearson correlation test. There was a significant correlation (r = -0.344, p \< .001).
+In the plot for the median household income and the search popularity of `crime`, much of the data is gathered in the lower half of the median household income but there is no clear pattern. A Pearson correlation test supports this by showing that there is no correlation between the two variables (r = `r cor3$estimate`, p = `r cor3$p.value`). On the other hand, the plot for `loans` shows a clear pattern in which higher search hits are centered around the lower end of median household income, suggesting a relationship between the two variables. We tested this relationship using a Pearson correlation test. There was a significant negative correlation (r = `r cor4$estimate`, p \< .001).
 
 ## Repeat the above steps using the covid data and the ACS data.
 
@@ -312,22 +312,23 @@ n = nrow(acs_with_loc) - nrow(merged) -(nrow(wide_2)-nrow(merged))
 n
 ```
 
-`n` = 1122 cities appear in both sets.
+`r n` cities do not appear in both sets.\
 
 ```{r}
 # If household income is greater than its median, name group as above average, if not, name group as above average
 # Then compute mean by group
-merged_2 %>% 
+table_inc <- merged_2 %>% 
   group_by(
     hhinc_med = 
       ifelse(hh_income > median(hh_income, na.rm = TRUE), 
                        "above", "below")) %>% 
                        summarize(mean_masks = mean(masks, na.rm = TRUE),
                        mean_deaths = mean(deaths, na.rm = TRUE))
-#code doesn't work if I don't use na.rm = True
+table_inc
 ```
 
-For cities that have an above average median household income, the search popularity of `masks` was 50.3 and 46.7 for `deaths`. For cities that have a below average median household income, the search popularity of `masks` was 43.6 and 38.8 for `deaths`. Those in cities with below average household income had a lower search rate for both keywords. We conclude there are more frequent searh of masks and death in cities with above average income. The fact that people pay greater attention on protection gears and death cases related to the pandemic in richer area may help to explain the observed difference in data.
+For cities that have an above average median household income, the search popularity of `masks` was `r table_inc[1,2]` and `r table_inc[1,3]` for `deaths`. For cities that have a below average median household income, the search popularity of `masks` was `r table_inc[2,2]` and `r table_inc[2,3]` for `deaths`. Those in cities with below average household income had a lower search rate for both keywords. We conclude there are more frequent searches of masks and death in cities with above average income. The possibility that people pay greater attention to protective gears and death cases related to the pandemic in richer areas may help to explain the observed difference in data.\
+
 
 ```{r}
 # Plot for masks
@@ -338,7 +339,7 @@ qplot(hh_income, masks, data = merged_2) +
        x = "Median Household Income", y = "Search Popularity of masks")
 
 # Correlation test
-cor.test(merged_2$hh_income, merged_2$masks)
+cor_mask <- cor.test(merged_2$hh_income, merged_2$masks)
 
 # Plot for deaths
 qplot(hh_income, deaths, data = merged_2) +
@@ -346,7 +347,7 @@ qplot(hh_income, deaths, data = merged_2) +
        x = "Median Household Income", y = "Search Popularity of deaths")
 
 # Correlation test
-cor.test(merged_2$hh_income, merged_2$deaths)
+cor_dea <- cor.test(merged_2$hh_income, merged_2$deaths)
 ```
 
-The Pearson correlation test shows that `masks` have a relationship with median household income (r = 0.394, p \< .001). The data for `mask` search hits in the plot has less outliers with most of the data points gathering around the lower side of income. On the other hand, `deaths` did not have a relationship with median household income (r = 0.184, p = 0.366). This coincides with the data points in the plot for `deaths` being more spread out.Notably, people with lower household income who may be more at risk of being infected or spreading COVID-19 due to their socioeconomic status, may have searched for `masks` frequently to buy or make them.
+The Pearson correlation test shows that `masks` have a relationship with median household income (r = `r cor_mask$estimate`, p \< .001). The data for `mask` search hits in the plot has less outliers with most of the data points gathering around the lower side of income. On the other hand, `deaths` did not have a relationship with median household income (r = `r cor_dea$estimate`, p = `r cor_dea$p.value`). This coincides with the data points in the plot for `deaths` being more spread out. Notably, people with lower household income who may be more at risk of being infected or spreading COVID-19 due to their socioeconomic status, may have searched for `masks` more frequently to buy or make them.
