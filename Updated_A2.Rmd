@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r echo=FALSE}
 #load libraries
 library(tidyverse)
 library(gtrendsR)
@@ -47,15 +47,15 @@ Answer the following questions for the keywords "crime" and "loans".
 res_time = as_tibble(res$interest_over_time)
 
 # Also compute the mean, sd, variance of each keyword
-res_time %>% 
+table1 <- res_time %>% 
   group_by(keyword) %>% 
   summarize(mean_hits = mean(hits),
             median = median(hits),
             var_hits = var(hits))
-
+table1
 ```
 
-The keyword `crime` had a mean search hit of 54.4 with a median of 54 and a variance of 78.0 The keyword `loans` had a mean search hit of 65.9 with a median of 65.5 and a variance of 96.3\
+The keyword `crime` had a mean search hit of `r table1[1,2]` with a median of `r table1[1,3]` and a variance of `r table1[1,4]`. The keyword `loans` had a mean search hit of `r table1[2,2]` with a median of `r table1[2,3]` and a variance of `r table1[2,4]`.\
 
 -   Which cities (locations) have the highest search frequency for `loans`? Note that there might be multiple rows for each city if there were hits for both "crime" and "loans" in that city. It might be easier to answer this question if we had the search hits info for both search terms in two separate variables. That is, each row would represent a unique city.
 
@@ -63,34 +63,31 @@ The keyword `crime` had a mean search hit of 54.4 with a median of 54 and a vari
 #transform the data.frame into tibble
 rest_city <- tibble(res$interest_by_city)
 
-# Reshape the data & Sort loans column in descending order
+#reshape the data & sort loans column in descending order
 city_ranking <- rest_city %>%
-  pivot_wider(names_from = keyword, values_from = hits) %>%
+  pivot_wider(names_from = keyword, 
+              values_from = hits) %>%
   arrange(., desc(loans))
 
 #display first few rows of the ranking to find the highest searched
 head(city_ranking)
-
-wide <- 
-  rest_city %>% 
-  pivot_wider(names_from = keyword,
-           values_from = hits)
 ```
 
-The cities Alorton `head(city_ranking)[1,1]` has the highest search frequency for `loans`, followed by Rosemont `head(city_ranking)[2,1]`,and Coal City `head(city_ranking)[3,1]`.\
+The city `r city_ranking[1,1]` has the highest search frequency for `loans`, followed by `r city_ranking[2,1]`, and `r city_ranking[3,1]`.\
 
 -   Is there a relationship between the search intensities between the two keywords we used?
 
 ```{r}
 # Run Pearson correlation test
-cor.test(wide$loans,wide$crime)
+cor1 <- cor.test(city_ranking$loans, city_ranking$crime)
+cor1
 ```
 
-While `loans` had a higher mean search frequency over time, there does not seem to be a large difference between the search frequency of `crime`. However, patterns can be seen in the plot. The two keywords seems to have an inverse relationship where search frequencies for `loans` are high when `crime` is low in the first peak/dip around April 2020. However, the pattern fades after around July 2020. We tested the relationship between the variables for interest by city to properly with a Pearson correlation test. The test suggests that there is a negative correlation between loans and crime (r = -0.544, p = 0.0196).\
+While `loans` had a higher mean search frequency over time, there does not seem to be a large difference compared to the search frequency of `crime`. However, patterns can be seen in the first plot. The two keywords seems to have an inverse relationship where search frequencies for `loans` are high when `crime` is low in the first peak/dip around April 2020. However, the pattern fades after around July 2020. We tested the relationship between the variables for interest by city to properly with a Pearson correlation test. The test suggests that there is no correlation between `loans` and `crime` (r = `cor1$estimate`, p = `r cor1$p.value`).\
 
 Repeat the above for keywords related to covid. Make sure you use multiple keywords like we did above. Try several different combinations and think carefully about words that might make sense within this context.
 
-Key Words: masks & deaths
+### Keywords: masks & deaths
 
 ```{r}
 # Create another dataset with new keywords
@@ -101,7 +98,8 @@ res_2 <- gtrends(c("masks", "deaths"),
 plot(res_2)
 ```
 
-In the plot, the frequencies have a similar shape in the first half of 2020, but the pattern becomes unclear in the second half. The initial spike in search hits of both keywords understandably corresponds to near the beginning of the pandemic when everyone was required to wear masks and news about rising cases of death due to infections.
+At first glance, the frequencies have a similar shape in the first half of 2020, but the pattern becomes less clear in the second half. The initial spike in search hits of both keywords understandably corresponds to near the beginning of the pandemic when mask mandates were placed and people may have been searching for information on the rising cases of death due to infections.\
+
 
 ```{r}
 #check data
@@ -111,14 +109,16 @@ In the plot, the frequencies have a similar shape in the first half of 2020, but
 res_time2 <- tibble(res_2$interest_over_time)
 
 # Compute the mean, standard deviation, and variance of search hits per keyword
-res_time2 %>% 
+table2 <- res_time2 %>% 
   group_by(keyword) %>% 
   summarize(mean_hits = mean(hits),
             median_hits = median(hits),
             var_hits = var(hits))
+table2
 ```
 
-The search frequency for `masks` over time had a mean of 32 with a median of 24 and a variance of 528. The search frequency for `deaths` over time had a mean of 30.7 with a median of 23.5 and a variance of 450. Both keywords have a similar mean and have high variances.
+The search frequency for `masks` over time had a mean of `r table2[1,2]` with a median of `r table2[1,3]` and a variance of `r table2[1,4]`. The search frequency for `deaths` over time had a mean of `r table2[2,2]` with a median of `r table2[2,3]` and a variance of `r table2[2,4]`. Both keywords have a similar mean and a high variance.\
+
 
 ```{r}
 # Transform data into tibble
@@ -142,7 +142,8 @@ city_ranking2_deaths <- rest_city2 %>%
 head(city_ranking2_deaths)
 ```
 
-We found that Hebron `head(city_ranking2_deaths)[1,1]` has the highest search frequency for the keyword "deaths" followed by Camanche `head(city_ranking2_deaths)[2,1]` and Galena `head(city_ranking2_deaths)[3,1]`. For the keyword "masks", Geneva `head(city_ranking2_masks)[1,1]` has the highest search frequency followed by Winnetka `head(city_ranking2_masks)[2,1]` and Lanark `head(city_ranking2_masks)[3,1]`.
+The city of `r city_ranking2_deaths[1,1]` had the highest search frequency for the keyword "deaths", followed by `r city_ranking2_deaths[2,1]` and `r city_ranking2_deaths[3,1]`. For the keyword "masks", `r city_ranking2_masks[1,1]` had the highest search frequency followed by `r city_ranking2_masks[2,1]` and `r city_ranking2_masks[3,1]`.\
+
 
 ```{r}
 # Reshape data from long to wide format using keywords
@@ -152,10 +153,11 @@ wide_2 <-
            values_from = hits)
 
 # Run Pearson correlation test
-cor.test(wide_2$masks, wide_2$deaths)
+cor2 <- cor.test(wide_2$masks, wide_2$deaths)
+cor2
 ```
 
-We conducted a Pearson correlation test to see if the search frequencies of the two keywords have a relationship. The test revealed that there is no significant correlation between masks and deaths(r = 0.266, p = 0.547).
+We conducted a Pearson correlation test to see if the search frequencies of the two keywords have a relationship. The test revealed that there is no significant correlation between masks and deaths(r = `r cor2$estimate`, p = `r cor2$p.value`).\
 
 ## Google Trends + ACS
 
