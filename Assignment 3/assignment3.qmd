@@ -84,7 +84,6 @@ east <- gsub(" ", "_", east) #change space to underscore
 east
 ```
 
-
 To prepare the loop, we also want to copy our `pop` table and rename it as `pops`. In the loop, we append this table by adding columns from the other community areas.
 
 ```{r}
