@@ -1,0 +1,208 @@
+---
+title: "Assignment 3"
+subtitle: "Due at 11:59pm on October 24."
+format: html
+editor: visual
+---
+
+You may work in pairs or individually for this assignment. Make sure you join a group in Canvas if you are working in pairs. Turn in this assignment as an HTML or PDF file to ELMS. Make sure to include the R Markdown or Quarto file that was used to generate it. Include the GitHub link for the repository containing these files.
+
+```{r}
+library(xml2)
+library(rvest)
+library(tidyverse)
+library(robotstxt)
+library(tm)
+```
+
+## Web Scraping
+
+In this assignment, your task is to scrape some information from Wikipedia. We start with the following page about Grand Boulevard, a Chicago Community Area.
+
+<https://en.wikipedia.org/wiki/Grand_Boulevard,_Chicago>
+
+The ultimate goal is to gather the table "Historical population" and convert it to a `data.frame`.
+
+As a first step, read in the html page as an R object. Extract the tables from this object (using the `rvest` package) and save the result as a new object. Follow the instructions if there is an error. Use `str()` on this new object \-- it should be a list. Try to find the position of the "Historical population" in this list since we need it in the next step.
+
+```{r}
+# check whether robot is allowed on this website
+paths_allowed("https://en.wikipedia.org/wiki/Grand_Boulevard,_Chicago")
+
+#read in the information from the first results page.
+url <- read_html("https://en.wikipedia.org/wiki/Grand_Boulevard,_Chicago")
+tables <- html_table(url)
+str(tables)
+```
+
+Extract the "Historical population" table from the list and save it as another object. You can use subsetting via `[[…]]` to extract pieces from a list. Print the result.
+
+```{r}
+pop <- tables[[2]]
+```
+
+You will see that the table needs some additional formatting. We only want rows and columns with actual values (I called the table object `pop`).
+
+```{r}
+pop <- pop[2:10, -3]
+colnames(pop) <- c("Year", "Population", "%Change")
+pop
+```
+
+## Expanding to More Pages
+
+That's it for this page. However, we may want to repeat this process for other community areas. The Wikipedia page https://en.wikipedia.org/wiki/Grand_Boulevard,\_Chicago has a section on "Places adjacent to Grand Boulevard, Chicago" at the bottom. Can you find the corresponding table in the list of tables that you created earlier? Extract this table as a new object.
+
+```{r}
+pagb <- tables[[4]]
+pagb
+```
+
+Then, grab the community areas east of Grand Boulevard and save them as a character vector. Print the result.
+
+```{r}
+east_gb <- as.character(pagb$X3) # commubity east of GB
+east_gb <- east_gb[-2]
+east_gb <- east_gb[-3] # to remove the extra space""
+east_gb
+```
+
+We want to use this list to create a loop that extracts the population tables from the Wikipedia pages of these places. To make this work and build valid urls, we need to replace empty spaces in the character vector with underscores. This can be done with `gsub()`, or by hand. The resulting vector should look like this: "Oakland,\_Chicago" "Kenwood,\_Chicago" "Hyde_Park,\_Chicago"
+
+```{r}
+east <- gsub(" ", "_", east_gb)
+east
+```
+
+To prepare the loop, we also want to copy our `pop` table and rename it as `pops`. In the loop, we append this table by adding columns from the other community areas.
+
+```{r}
+pops <- pop #rename the pop table to pops
+```
+
+Build a small loop to test whether you can build valid urls using the vector of places `east` and pasting each element of it after `https://en.wikipedia.org/wiki/` in a for loop. Calling `url` shows the last url of this loop, which should be `https://en.wikipedia.org/wiki/Hyde_Park,_Chicago`.
+
+```{r}
+for(i in east) {
+  url <- paste0("https://en.wikipedia.org/wiki/", i) # generate the url
+  print(url) #print url
+} #paste() has a sep = "" by default
+
+url
+```
+
+Finally, extend the loop and add the code that is needed to grab the population tables from each page. Add columns to the original table `pops` using `cbind()`.
+
+```{r}
+
+for(i in east) {
+  url <- paste0("https://en.wikipedia.org/wiki/", i) # generate the url
+  tables <- html_table(read_html(url)) # get the tables from the page
+  hispop <- tables[[2]] # get the hispop table
+  hispop <- hispop[2:10, -3]
+  colnames(hispop) <- c("Year", "Population", "%Change")
+  pops <- cbind(pops, hispop)
+}
+  
+pops
+
+# Q: How should we combine the 4 tables into 1, not paralell to each other?
+```
+
+## Scraping and Analyzing Text Data
+
+Suppose we wanted to take the actual text from the Wikipedia pages instead of just the information in the table. Our goal in this section is to extract the text from the body of the pages, then do some basic text cleaning and analysis.
+
+First, scrape just the text without any of the information in the margins or headers. For example, for "Grand Boulevard", the text should start with, "**Grand Boulevard** on the [South Side](https://en.wikipedia.org/wiki/South_Side,_Chicago "South Side, Chicago") of [Chicago](https://en.wikipedia.org/wiki/Chicago "Chicago"), [Illinois](https://en.wikipedia.org/wiki/Illinois "Illinois"), is one of the ...". Make sure all of the text is in one block by using something like the code below (I called my object `description`).
+
+```{r}
+# description <- description %>% paste(collapse = ' ')
+
+url <- "https://en.wikipedia.org/wiki/Grand_Boulevard,_Chicago"
+page <- read_html(url)
+main_content <- page %>%
+  html_nodes(".mw-parser-output p") %>% 
+  html_text2()
+
+description <- main_content %>% paste(collapse = ' ')
+grand_descrip <- data.frame(Location = "Grand Boulevard, Chicago", Description = description)
+grand_descrip
+```
+
+Using a similar loop as in the last section, grab the descriptions of the various communities areas. Make a tibble with two columns: the name of the location and the text describing the location.
+
+```{r}
+library(tidytext)
+
+location_descriptions <- tibble()
+for (i in east) 
+  {
+  url <- paste0("https://en.wikipedia.org/wiki/", i)
+  src <- read_html(url)
+  main_content <- src %>%
+    html_nodes(".mw-parser-output p") %>% 
+    html_text2()
+  desci <- main_content %>% paste(collapse = ' ')
+  place_cleaned <- gsub("_", " ", i)
+  location_descriptions <- rbind(location_descriptions, tibble(Location = place_cleaned, Description = desci))
+}
+location_descriptions <- rbind(grand_descrip, location_descriptions)
+```
+
+Let's clean the data using `tidytext`. If you have trouble with this section, see the example shown in <https://www.tidytextmining.com/tidytext.html>
+
+Create tokens using `unnest_tokens`. Make sure the data is in one-token-per-row format. Remove any stop words within the data. What are the most common words used overall?
+
+```{r}
+
+text <- c()
+for(i in east) {
+  url <- paste0("https://en.wikipedia.org/wiki/", i)
+  main_text <-  read_html(url) %>%
+    html_nodes(".mw-parser-output p") %>%
+    html_text(trim = TRUE) # get the main text
+  
+  # Add the text to the all_text character vector
+  all_text <- c(text, main_text)
+}
+
+data("stop_words") # load the common stopwords
+
+text_df <- data.frame()
+for (i in 1:nrow(location_descriptions)) {
+  description <- location_descriptions$Description[i]
+  text <- data.frame(Description = description) %>%
+    unnest_tokens(word, Description) %>% # Tokenize the text data
+    anti_join(stop_words) # Remove stop words
+  text$Location <- location_descriptions$Location[i]
+  text_df <- bind_rows(text_df, text)
+}
+
+text_count <- text_df %>%
+  count(Location, word, sort = TRUE) # count the most common words
+```
+
+Plot the most common words within each location. What are some of the similarities between the locations? What are some of the differences?
+
+```{r}
+library(ggplot2)
+
+top <- 12 # here we want to plot the top 12 popular words within each location
+
+# Get top 12 words for each location
+top_words <- text_count %>%
+  group_by(Location) %>%
+  slice_max(n, n = top) # Get top 12 words for each location
+top_words
+
+ggplot(top_words, aes(x = n, y = reorder(word, n), fill = Location)) +
+  geom_col() +
+  facet_wrap(~Location, scales = "free_y") +
+  labs(x = "Frequency", y = "Common Words", title = "Most common words in communities") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+-   Differences: The common words in Hyde Park have higher frequency than common words in other communities. The word "university" has been common used in the Hyde Park area, and this may be explained by the location of University of Chicago (residing inside this area).
+
+-   Similarity: The name of the community (e.g., kenwood, hyde, park, oakland, grand) are part of the most common words used in their corresponding communities. All 4 areas have "chicago" as their most common words used.
