@@ -29,7 +29,7 @@ The ultimate goal is to gather the table "Historical population" and convert it 
 
 As a first step, read in the html page as an R object. Extract the tables from this object (using the `rvest` package) and save the result as a new object. Follow the instructions if there is an error. Use `str()` on this new object \-- it should be a list. Try to find the position of the "Historical population" in this list since we need it in the next step.
 
-```{r}
+```{r, results='hide'}
 # Read in Wikipedia webpage as an R object
 url <- "https://en.wikipedia.org/wiki/Grand_Boulevard,_Chicago"
 webpage <- read_html(url)
@@ -109,7 +109,6 @@ Finally, extend the loop and add the code that is needed to grab the population 
 ```{r}
 pops$Location <- c("Grand Boulevard, Chicago")
 
-
 for(i in east) {
   url <- paste0("https://en.wikipedia.org/wiki/", i, sep = "")
   src <- read_html(url)
@@ -134,32 +133,6 @@ for(i in east) {
 
 pops
 ```
-```{r}
-for(i in east) {
-  url <- paste0("https://en.wikipedia.org/wiki/", i, sep = "")
-  src <- read_html(url)
-  print(url)
-
-  nds <- html_nodes(src, xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//th | //*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//td')
-  stats <- html_text(nds)
-  stats <- stats[-45]
-  
-  header <- stats[1:4]
-  stats <- stats[-(1:4)]
-  
-  stats_matrix <- matrix(stats, ncol = 4, byrow = TRUE)
-  stats_df <- as.data.frame(stats_matrix)
-  stats_df <- stats_df[-3]
-  colnames(stats_df) <- header[-3]
-  
-  stats_df$Location <- gsub("_", " ", i)
-  
-  pops <- cbind(pops, stats_df)
-}
-
-pops
-```
-
 
 ## Scraping and Analyzing Text Data
 
@@ -206,7 +179,7 @@ Let's clean the data using `tidytext`. If you have trouble with this section, se
 
 Create tokens using `unnest_tokens`. Make sure the data is in one-token-per-row format. Remove any stop words within the data. What are the most common words used overall?
 
-```{r}
+```{r, message=FALSE}
 text <- c()
 for(i in east) {
   url <- paste0("https://en.wikipedia.org/wiki/", i)
@@ -233,7 +206,7 @@ for (i in 1:nrow(location_descriptions)) {
 # Count the most common words
 text_count <- text_df %>%
   count(Location, word, sort = TRUE)
-text_count
+head(text_count)
 ```
 
 -   The top three common words used are: "park", "hyde", and "chicago".
@@ -250,6 +223,7 @@ top_words <- text_count %>%
   slice_max(n, n = top) # Get top 12 words for each location
 top_words
 
+# Plot common words by location
 ggplot(top_words, aes(x = n, y = reorder(word, n), fill = Location)) +
   geom_col() +
   facet_wrap(~Location, scales = "free_y") +
