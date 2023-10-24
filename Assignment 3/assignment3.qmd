@@ -13,6 +13,8 @@ You may work in pairs or individually for this assignment. Make sure you join a 
 library(xml2)
 library(rvest)
 library(tidyverse)
+library(tidytext)
+
 ```
 
 ## Github link: https://github.com/ZuorW/SURV727.git
@@ -139,40 +141,38 @@ First, scrape just the text without any of the information in the margins or hea
 description <- webpage %>% 
   html_nodes('.mw-parser-output p') %>% 
   html_text(trim = TRUE) %>% 
-  paste(collapse = ' ')
+  paste(collapse = ' ') %>% 
+  as_tibble()
 
-# Print paragraph
-print(description[1])
+grand_descrip <- data.frame(Location = "Grand Boulevard, Chicago", Description = description)
+
 ```
 
 Using a similar loop as in the last section, grab the descriptions of the various communities areas. Make a tibble with two columns: the name of the location and the text describing the location.
 
 ```{r}
-# Initialize an empty data frame to hold your results
-descs <- data.frame(Community = character(),
-                    Description = character(),
-                    stringsAsFactors = FALSE)
+# Add Community column to tibble of Grand Boulevard description
+multi_desc <- description %>% 
+  add_column(Community = "Grand Boulevard, Chicago", .before = "value") %>% 
+  rename(Description = value)
 
+# Loop
 for(i in east) {
-  url <- paste0("https://en.wikipedia.org/wiki/", i, sep = "")
+  url <- paste0("https://en.wikipedia.org/wiki/", i)
   src <- read_html(url)
-  print(url)
   
   description <- src %>% 
     html_nodes('.mw-parser-output p') %>% 
-    html_text(trim = TRUE) %>% 
+    html_text() %>% 
     paste(collapse = ' ')
-  desc_df <- as.data.frame(description)
 
-  community <- gsub("_", " ", east)
-
-# Bind this row onto the data frame
-  descs <- rbind(descs, data.frame(Community = community, Description = description, stringsAsFactors = FALSE))
+  community <- gsub("_", " ", i)
+  
+  multi_desc <- rbind(multi_desc, tibble(Community = community, Description = description))
 }
 
-descs
+multi_desc
 ```
-
 
 Let's clean the data using `tidytext`. If you have trouble with this section, see the example shown in <https://www.tidytextmining.com/tidytext.html>
 
@@ -182,4 +182,46 @@ library(tidytext)
 
 Create tokens using `unnest_tokens`. Make sure the data is in one-token-per-row format. Remove any stop words within the data. What are the most common words used overall?
 
+```{r}
+# tidytext data on stop words
+data(stop_words)
+
+# Tokenize data and remove stop words
+tokenized_desc <- multi_desc %>%
+  unnest_tokens(word, Description) %>%
+  anti_join(stop_words) #remove stop words
+
+# Make list of common words
+common_words <- tokenized_desc %>%
+  count(word, sort = TRUE)
+
+common_words
+```
+
+-   The top three common words used are: "park", "hyde", and "chicago".
+
 Plot the most common words within each location. What are some of the similarities between the locations? What are some of the differences?
+```{r}
+# Calculate word counts by community
+word_counts <- tokenized_desc %>%
+  group_by(Community, word) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  mutate(word = reorder(word, n))
+
+# plot the top N most common words per location
+N <- 10
+
+word_counts %>%
+  group_by(Community) %>%
+  top_n(N, n) %>%
+  ggplot(aes(x = word, y = n, fill = Community)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ Community, scales = "free_y") +
+  coord_flip() +
+  labs(x = "Most common words", y = "Frequency")
+```
+- The words with the highest use frequency in each community are all (or part) of that community's name. After that, "Chicago" is the next most used word in each page except for the Kenwood community. All communities share common words related to neighborhoods, infrastructure, and politics.
+
+- Hyde Park has the highest mean frequencies of common words compared to other communities. Grand Boulevard and Hyde Park both have a word starting with a number in the list of common words. All communities except Kenwood have words related to demographics, such as "age" and "African".  
+
+
