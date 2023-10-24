@@ -1,13 +1,11 @@
 ---
 title: "Assignment 3"
 subtitle: "Due at 11:59pm on October 24."
+author: "Akari Oya and Zhuoer Wang"
 format: html
 editor: visual
 ---
 
-helpful links: selectorgadget.com, regex expression using
-
-You may work in pairs or individually for this assignment. Make sure you join a group in Canvas if you are working in pairs. Turn in this assignment as an HTML or PDF file to ELMS. Make sure to include the R Markdown or Quarto file that was used to generate it. Include the GitHub link for the repository containing these files.
 
 ```{r include=FALSE}
 library(xml2)
