@@ -110,8 +110,8 @@ for(i in east) {
   src <- read_html(url)
   print(url)
 
-  nds2 <- html_nodes(src, xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//th | //*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//td')
-  stats <- html_text(nds2)
+  nds <- html_nodes(src, xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//th | //*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//td')
+  stats <- html_text(nds)
   stats <- stats[-45]
   
   header <- stats[1:4]
@@ -135,10 +135,44 @@ Suppose we wanted to take the actual text from the Wikipedia pages instead of ju
 First, scrape just the text without any of the information in the margins or headers. For example, for "Grand Boulevard", the text should start with, "**Grand Boulevard** on the [South Side](https://en.wikipedia.org/wiki/South_Side,_Chicago "South Side, Chicago") of [Chicago](https://en.wikipedia.org/wiki/Chicago "Chicago"), [Illinois](https://en.wikipedia.org/wiki/Illinois "Illinois"), is one of the ...". Make sure all of the text is in one block by using something like the code below (I called my object `description`).
 
 ```{r}
-# description <- description %>% paste(collapse = ' ')
+# Grab body text of Wiki page and save in one block
+description <- webpage %>% 
+  html_nodes('.mw-parser-output p') %>% 
+  html_text(trim = TRUE) %>% 
+  paste(collapse = ' ')
+
+# Print paragraph
+print(description[1])
 ```
 
 Using a similar loop as in the last section, grab the descriptions of the various communities areas. Make a tibble with two columns: the name of the location and the text describing the location.
+
+```{r}
+# Initialize an empty data frame to hold your results
+descs <- data.frame(Community = character(),
+                    Description = character(),
+                    stringsAsFactors = FALSE)
+
+for(i in east) {
+  url <- paste0("https://en.wikipedia.org/wiki/", i, sep = "")
+  src <- read_html(url)
+  print(url)
+  
+  description <- src %>% 
+    html_nodes('.mw-parser-output p') %>% 
+    html_text(trim = TRUE) %>% 
+    paste(collapse = ' ')
+  desc_df <- as.data.frame(description)
+
+  community <- gsub("_", " ", east)
+
+# Bind this row onto the data frame
+  descs <- rbind(descs, data.frame(Community = community, Description = description, stringsAsFactors = FALSE))
+}
+
+descs
+```
+
 
 Let's clean the data using `tidytext`. If you have trouble with this section, see the example shown in <https://www.tidytextmining.com/tidytext.html>
 
