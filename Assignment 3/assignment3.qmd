@@ -167,90 +167,95 @@ Suppose we wanted to take the actual text from the Wikipedia pages instead of ju
 
 First, scrape just the text without any of the information in the margins or headers. For example, for "Grand Boulevard", the text should start with, "**Grand Boulevard** on the [South Side](https://en.wikipedia.org/wiki/South_Side,_Chicago "South Side, Chicago") of [Chicago](https://en.wikipedia.org/wiki/Chicago "Chicago"), [Illinois](https://en.wikipedia.org/wiki/Illinois "Illinois"), is one of the ...". Make sure all of the text is in one block by using something like the code below (I called my object `description`).
 
+
 ```{r}
-# Grab body text of Wiki page and save in one block
-description <- webpage %>% 
-  html_nodes('.mw-parser-output p') %>% 
-  html_text(trim = TRUE) %>% 
-  paste(collapse = ' ') %>% 
-  as_tibble()
+# description <- description %>% paste(collapse = ' ')
 
+url <- "https://en.wikipedia.org/wiki/Grand_Boulevard,_Chicago"
+page <- read_html(url)
+main_content <- page %>%
+  html_nodes(".mw-parser-output p") %>% 
+  html_text2()
+
+description <- main_content %>% paste(collapse = ' ')
 grand_descrip <- data.frame(Location = "Grand Boulevard, Chicago", Description = description)
-
+grand_descrip
 ```
 
 Using a similar loop as in the last section, grab the descriptions of the various communities areas. Make a tibble with two columns: the name of the location and the text describing the location.
 
 ```{r}
-# Add Community column to tibble of Grand Boulevard description
-multi_desc <- description %>% 
-  add_column(Community = "Grand Boulevard, Chicago", .before = "value") %>% 
-  rename(Description = value)
+library(tidytext)
 
-# Loop
-for(i in east) {
+location_descriptions <- tibble()
+for (i in east) 
+  {
   url <- paste0("https://en.wikipedia.org/wiki/", i)
   src <- read_html(url)
-  
-  description <- src %>% 
-    html_nodes('.mw-parser-output p') %>% 
-    html_text() %>% 
-    paste(collapse = ' ')
-
-  community <- gsub("_", " ", i)
-  
-  multi_desc <- rbind(multi_desc, tibble(Community = community, Description = description))
+  main_content <- src %>%
+    html_nodes(".mw-parser-output p") %>% 
+    html_text2()
+  desci <- main_content %>% paste(collapse = ' ')
+  place_cleaned <- gsub("_", " ", i)
+  location_descriptions <- rbind(location_descriptions, tibble(Location = place_cleaned, Description = desci))
 }
-
-multi_desc
+location_descriptions <- rbind(grand_descrip, location_descriptions)
 ```
 
 Let's clean the data using `tidytext`. If you have trouble with this section, see the example shown in <https://www.tidytextmining.com/tidytext.html>
 
-```{r}
-library(tidytext)
-```
-
 Create tokens using `unnest_tokens`. Make sure the data is in one-token-per-row format. Remove any stop words within the data. What are the most common words used overall?
 
 ```{r}
-# tidytext data on stop words
-data(stop_words)
+text <- c()
+for(i in east) {
+  url <- paste0("https://en.wikipedia.org/wiki/", i)
+  main_text <-  read_html(url) %>%
+    html_nodes(".mw-parser-output p") %>%
+    html_text(trim = TRUE) # get the main text
+  
+# Add the text to the all_text character vector
+  all_text <- c(text, main_text)
+}
 
-# Tokenize data and remove stop words
-tokenized_desc <- multi_desc %>%
-  unnest_tokens(word, Description) %>%
-  anti_join(stop_words) #remove stop words
+data("stop_words") # load the common stopwords
 
-# Make list of common words
-common_words <- tokenized_desc %>%
-  count(word, sort = TRUE)
+text_df <- data.frame()
+for (i in 1:nrow(location_descriptions)) {
+  description <- location_descriptions$Description[i]
+  text <- data.frame(Description = description) %>%
+    unnest_tokens(word, Description) %>% # Tokenize the text data
+    anti_join(stop_words) # Remove stop words
+  text$Location <- location_descriptions$Location[i]
+  text_df <- bind_rows(text_df, text)
+}
 
-common_words
+# Count the most common words
+text_count <- text_df %>%
+  count(Location, word, sort = TRUE)
+text_count
 ```
 
 -   The top three common words used are: "park", "hyde", and "chicago".
 
 Plot the most common words within each location. What are some of the similarities between the locations? What are some of the differences?
-
 ```{r}
-# Calculate word counts by community
-word_counts <- tokenized_desc %>%
-  group_by(Community, word) %>%
-  summarise(n = n(), .groups = "drop") %>%
-  mutate(word = reorder(word, n))
+library(ggplot2)
 
-# plot the top N most common words per location
-N <- 12
+top <- 12 # here we want to plot the top 12 popular words within each location
 
-word_counts %>%
-  group_by(Community) %>%
-  top_n(N, n) %>%
-  ggplot(aes(x = word, y = n, fill = Community)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~ Community, scales = "free_y") +
-  coord_flip() +
-  labs(x = "Most common words", y = "Frequency")
+# Get top 12 words for each location
+top_words <- text_count %>%
+  group_by(Location) %>%
+  slice_max(n, n = top) # Get top 12 words for each location
+top_words
+
+ggplot(top_words, aes(x = n, y = reorder(word, n), fill = Location)) +
+  geom_col() +
+  facet_wrap(~Location, scales = "free_y") +
+  labs(x = "Frequency", y = "Common Words", title = "Most common words in communities") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 -   Similarities: The words with the highest use frequency in each community are all (or part) of that community's name. After that, "Chicago" is the next most used word in each page except for the Kenwood community. All communities share common words related to neighborhoods, infrastructure, and politics.
