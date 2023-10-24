@@ -107,6 +107,34 @@ url
 Finally, extend the loop and add the code that is needed to grab the population tables from each page. Add columns to the original table `pops` using `cbind()`.
 
 ```{r}
+pops$Location <- c("Grand Boulevard, Chicago")
+
+
+for(i in east) {
+  url <- paste0("https://en.wikipedia.org/wiki/", i, sep = "")
+  src <- read_html(url)
+  print(url)
+
+  nds <- html_nodes(src, xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//th | //*[contains(concat( " ", @class, " " ), concat( " ", "us-census-pop-right", " " ))]//td')
+  stats <- html_text(nds)
+  stats <- stats[-45]
+  
+  header <- stats[1:4]
+  stats <- stats[-(1:4)]
+  
+  stats_matrix <- matrix(stats, ncol = 4, byrow = TRUE)
+  stats_df <- as.data.frame(stats_matrix)
+  stats_df <- stats_df[-3]
+  colnames(stats_df) <- header[-3]
+
+  stats_df$Location <- gsub("_", " ", i)
+  
+  pops <- cbind(pops, stats_df)
+}
+
+pops
+```
+```{r}
 for(i in east) {
   url <- paste0("https://en.wikipedia.org/wiki/", i, sep = "")
   src <- read_html(url)
@@ -124,11 +152,14 @@ for(i in east) {
   stats_df <- stats_df[-3]
   colnames(stats_df) <- header[-3]
   
+  stats_df$Location <- gsub("_", " ", i)
+  
   pops <- cbind(pops, stats_df)
 }
 
 pops
 ```
+
 
 ## Scraping and Analyzing Text Data
 
@@ -201,6 +232,7 @@ common_words
 -   The top three common words used are: "park", "hyde", and "chicago".
 
 Plot the most common words within each location. What are some of the similarities between the locations? What are some of the differences?
+
 ```{r}
 # Calculate word counts by community
 word_counts <- tokenized_desc %>%
@@ -209,7 +241,7 @@ word_counts <- tokenized_desc %>%
   mutate(word = reorder(word, n))
 
 # plot the top N most common words per location
-N <- 10
+N <- 12
 
 word_counts %>%
   group_by(Community) %>%
@@ -220,8 +252,7 @@ word_counts %>%
   coord_flip() +
   labs(x = "Most common words", y = "Frequency")
 ```
-- The words with the highest use frequency in each community are all (or part) of that community's name. After that, "Chicago" is the next most used word in each page except for the Kenwood community. All communities share common words related to neighborhoods, infrastructure, and politics.
 
-- Hyde Park has the highest mean frequencies of common words compared to other communities. Grand Boulevard and Hyde Park both have a word starting with a number in the list of common words. All communities except Kenwood have words related to demographics, such as "age" and "African".  
+-   Similarities: The words with the highest use frequency in each community are all (or part) of that community's name. After that, "Chicago" is the next most used word in each page except for the Kenwood community. All communities share common words related to neighborhoods, infrastructure, and politics.
 
-
+-   Differences: Hyde Park has the highest mean frequencies of common words compared to other communities. The word "university" has been common used in the Hyde Park area, and this may be explained by the location of University of Chicago (residing inside this area). Additionally, Grand Boulevard and Hyde Park both have a word starting with a number in the list of common words. All communities except Kenwood have words related to demographics, such as "age" and "African".
