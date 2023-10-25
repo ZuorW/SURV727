@@ -1,6 +1,7 @@
 ---
 title: "Assignment 4"
 subtitle: "Due at 11:59pm on November 7."
+authors: "Akari Oya, Zhouer Wang"
 format: pdf
 editor: visual
 ---
@@ -50,10 +51,18 @@ dbListTables(con)
 ```
 
 Information on the \`crime\` table can be found here:
-
 <https://console.cloud.google.com/marketplace/product/city-of-chicago-public-data/chicago-crime?q=search&referrer=search&authuser=2&project=surv727-database&supportedpurview=project>
 
 Write a first query that counts the number of rows of the \`crime\` table in the year 2016. Use code chunks with {sql connection = con} in order to write SQL code within the document.
+
+
+```{sql connection= con, message = FALSE}
+SELECT count(*)
+FROM crime
+WHERE year = 2016
+LIMIT 10;
+```
+
 
 Next, count the number of arrests grouped by `primary_type` in 2016. Note that is a somewhat similar task as above, with some adjustments on which rows should be considered. Sort the results, i.e. list the number of arrests in a descending order.
 
