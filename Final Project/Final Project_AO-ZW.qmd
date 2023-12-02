@@ -13,17 +13,3 @@ API guide <https://help.apple.com/itc/musicanalyticsapi/>
 
 Billboard API <https://rapidapi.com/LDVIN/api/billboard-api/>
 
-```{r}
-library(httr)
-url <- "https://billboard-api2.p.rapidapi.com/hot-100"
-
-queryString <- list(
-	date = "2019-05-11",
-	range = "1-10"
-)
-
-response <- VERB("GET", url, query = queryString, add_headers('X-RapidAPI-Key' = '0712967ff5msh61d3d913f017517p1ecf1bjsn0e2146cddb57', 'X-RapidAPI-Host' = 'billboard-api2.p.rapidapi.com'), content_type("application/octet-stream"))
-
-content(response, "text")
-```
-
