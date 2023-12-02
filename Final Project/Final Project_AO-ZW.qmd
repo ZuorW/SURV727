@@ -13,3 +13,42 @@ API guide <https://help.apple.com/itc/musicanalyticsapi/>
 
 Billboard API <https://rapidapi.com/LDVIN/api/billboard-api/>
 
+weather vs search for antidepressants
+
+```{r}
+library(openmeteo)
+weather_variables()
+
+# obtain cloud cover history for London over 2020
+weather_history("",
+  start = "2020-01-01",
+  end = "2021-12-31",
+  daily = "temperature_2m_max",
+  response_units = list(temperature_unit = "fahrenheit") 
+)
+
+geocode("Michigan")
+
+```
+```{r}
+
+library(gtrendsR)
+res <- gtrends(c("antidepressants", "depression"), 
+               geo = "US-MI", 
+               time = "2020-01-01 2020-12-31", 
+               low_search_volume = TRUE)
+plot(res)
+
+#transform the data.frame into tibble
+rest_city <- tibble(res$interest_by_city)
+
+#reshape the data & sort loans column in descending order
+city_ranking <- rest_city %>%
+  pivot_wider(names_from = keyword, 
+              values_from = hits) %>%
+  arrange(., desc(loans))
+
+#display first few rows of the ranking to find the highest searched
+head(city_ranking)
+```
+
