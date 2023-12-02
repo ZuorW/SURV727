@@ -4,4 +4,26 @@ author: "Akari Oya, Zhouer Wang"
 format: html
 ---
 
-## 
+## Proposal:
+For the final project, we plan to investigate how people's music listening habits change throughout the seasons and differ among countries. Our draft research question is: "What music genres are popular during different times/seasons of the year across the globe?" The primary data
+sources for our research include the Apple Music API and Open-Meteo API, which we will use to gather extensive information about trends in music and climate, respectively. The unit of analysis will primarily be countries with metrics focusing on the play count of top artists and musical genres throughout the seasons. We plan to collect data spanning three years to capture various fluctuations in climate. Given the broad reach of Apple Music, this will likely result in tens of thousands of rows of data. The data includes variables such as country, artist, song title, genre, number of plays, and the date of data retrieval. Before analysis, we will remove missing cases and irrelevant columns. We may also convert all dates/times into the same format and create a 'season' variable, with possible data aggregation. To effectively communicate our results, we plan to introduce interactive line graphs and maps that allow users to explore music habits over time, across seasons, and between countries according to their particular interests. An interactive slider for time will be incorporated to focus on specific periods.
+
+Music Analytics API <https://itunespartner.apple.com/music/support/5241-music-analytics-api>
+API guide <https://help.apple.com/itc/musicanalyticsapi/>
+
+Billboard API <https://rapidapi.com/LDVIN/api/billboard-api/>
+
+```{r}
+library(httr)
+url <- "https://billboard-api2.p.rapidapi.com/hot-100"
+
+queryString <- list(
+	date = "2019-05-11",
+	range = "1-10"
+)
+
+response <- VERB("GET", url, query = queryString, add_headers('X-RapidAPI-Key' = '0712967ff5msh61d3d913f017517p1ecf1bjsn0e2146cddb57', 'X-RapidAPI-Host' = 'billboard-api2.p.rapidapi.com'), content_type("application/octet-stream"))
+
+content(response, "text")
+```
+
