@@ -1,15 +1,17 @@
 ---
 title: "Assignment 5"
-subtitle: "Due at 11:59pm on November 28."
+subtitle: "Due at 11:59pm on December 5th"
+author: Akari Oya, Zhouer Wang
 format: pdf
 editor: visual
 ---
 
 You may work in pairs or individually for this assignment. Make sure you join a group in Canvas if you are working in pairs. Turn in this assignment as an HTML or PDF file to ELMS. Make sure to include the R Markdown or Quarto file that was used to generate it. Include the GitHub link for the repository containing these files.
 
-#Github link: https://github.com/ZuorW/SURV727.git
+# Github link: <https://github.com/ZuorW/SURV727.git>
 
-```{r}
+
+```{r, include = FALSE}
 library(ggmap)
 library(censusapi)
 library(tidyverse)
@@ -46,19 +48,38 @@ head(il_map)
 Join the ACS data with the map data. Not that `il_map` has a column `subregion` which includes county names. We need a corresponding variable in the ACS data to join both data sets. This needs some transformations, among which the function `tolower()` might be useful. Call the joined data `acs_map`.
 
 ```{r}
-acs_il_c$county_name <- tolower(sapply(strsplit(acs_il_c$NAME, ","), `[`, 1))
-acs_il_c$county_name <- gsub(" county", "", acs_il_c$county_name) 
+# Manipulating to match datasets for merging
+# In ACS data, rename NAME to subregion
+acs_il_c <- acs_il_c %>% 
+  rename(subregion = NAME)
 
-acs_map <- left_join(acs_il_c, il_map, by = c("county_name" = "subregion"))
+# Take out unnecessary part of subregion variable
+acs_il_c$subregion <- 
+  gsub(' County, Illinois', '', acs_il_c$subregion) 
+
+# Take out spaces in subregion variable to match data sets
+acs_il_c$subregion <-  
+  gsub(" ", "", acs_il_c$subregion) %>% 
+  tolower() #make values lowercase
+
+head(acs_il_c)
+
+# In map data, remove spaces in subregion column
+il_map$subregion <- gsub(" ", "", il_map$subregion)
+```
+
+
+```{r}
+# Join ACS and map data
+acs_map <-
+  acs_il_c %>% 
+  inner_join(il_map, by = "subregion")
 head(acs_map)
-
 ```
 
 After you do this, plot a map of Illinois with Counties colored by per capita income.
 
-```{r}
-# | fig.height = 7.5, fig.width = 7
-
+```{r, fig.height = 6.5, fig.width = 6}
 ggplot(acs_map) +
 geom_polygon(aes(x = long, y = lat, fill = income, group = group))
 ```
@@ -82,8 +103,8 @@ hc_ward <- hclust(hclust_d, method = "ward.D2")
 
 Plot the dendrogram to find a reasonable number of clusters. Draw boxes around the clusters of your cluster solution.
 
-```{r}
-plot(hc_ward, main = "Ward", xlab = "", sub = "")
+```{r, fig.height = 4, fig.width = 4}
+plot(hc_ward, main = "Ward", xlab = "", sub = "", labels = FALSE)
 rect.hclust(hc_ward, 
             k = 4, 
             border = "hotpink")
@@ -100,9 +121,10 @@ acs_map %>%
   mutate(cluster = cutree(hc_ward, 4))
 ```
 
-```{r}
-library(ggmap)
-# not sure about this part
+```{r, fig.height = 6.5, fig.width = 6}
+ggplot(acs_map) +
+geom_polygon(aes(x = long, y = lat, fill = clusters, group = group))
+
 ```
 
 ## Census Tracts
@@ -132,6 +154,7 @@ acs_il_t$pop <- as.numeric(acs_il_t$pop)
 acs_il_t$hh_income <- as.numeric(acs_il_t$hh_income)
 acs_il_t$income <- as.numeric(acs_il_t$income)
 
+# Remove missing data
 acs_il_t <- na.omit(acs_il_t)
 ```
 
@@ -147,31 +170,33 @@ fviz_nbclust(hclust_data2,
              kmeans,
              method = "wss",
              k.max = 20)
-
 ```
 
 Run `kmeans()` for the optimal number of clusters based on the plot above.
 
 ```{r}
+# 8 looks like optimal cluster number due to the elbow criterion 
 kmean <- kmeans(hclust_data2, 8, nstart = 20)
-kmean
-acs_il_t$cluster <- kmean$cluster
 
+# Make cluster number in dataset to be 8
+acs_il_t$cluster <- kmean$cluster
 ```
 
 Find the mean population, household income and per capita income grouped by clusters. In addition, display the most frequent county that can be observed within each cluster.
 
 ```{r}
+# Create county name variable with just name
 acs_il_t <- acs_il_t %>%
   mutate(county_name = sapply(strsplit(NAME, ", "), `[`, 2))
 
+# Create summary table
 summary_cluster <- acs_il_t %>%
   group_by(cluster) %>%
   summarize(
     mean_pop = mean(pop),
     mean_hh_income = mean(hh_income),
     mean_income = mean(income),
-    most_frequent_county = names(sort(table(county_name), decreasing = TRUE)[1])
+    most_frequent_county = names(which.max(table(county_name)))
   )
 summary_cluster
 ```
