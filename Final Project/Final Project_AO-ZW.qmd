@@ -5,31 +5,41 @@ format: html
 ---
 
 ## Proposal:
-For the final project, we plan to investigate how people's music listening habits change throughout the seasons and differ among countries. Our draft research question is: "What music genres are popular during different times/seasons of the year across the globe?" The primary data
-sources for our research include the Apple Music API and Open-Meteo API, which we will use to gather extensive information about trends in music and climate, respectively. The unit of analysis will primarily be countries with metrics focusing on the play count of top artists and musical genres throughout the seasons. We plan to collect data spanning three years to capture various fluctuations in climate. Given the broad reach of Apple Music, this will likely result in tens of thousands of rows of data. The data includes variables such as country, artist, song title, genre, number of plays, and the date of data retrieval. Before analysis, we will remove missing cases and irrelevant columns. We may also convert all dates/times into the same format and create a 'season' variable, with possible data aggregation. To effectively communicate our results, we plan to introduce interactive line graphs and maps that allow users to explore music habits over time, across seasons, and between countries according to their particular interests. An interactive slider for time will be incorporated to focus on specific periods.
+weather data vs gtrends data for seasonal depression-related words
 
-Music Analytics API <https://itunespartner.apple.com/music/support/5241-music-analytics-api>
-API guide <https://help.apple.com/itc/musicanalyticsapi/>
-
-Billboard API <https://rapidapi.com/LDVIN/api/billboard-api/>
-
-weather vs search for antidepressants
-
+From Open Meteo API
 ```{r}
+# Load necessary package
 library(openmeteo)
+
+# see which weather variables we have data for
 weather_variables()
 
-# obtain cloud cover history for London over 2020
-weather_history("",
+# Code for pulling one city's dataset
+aa_weather <- weather_history("Ann Arbor",
   start = "2020-01-01",
   end = "2021-12-31",
-  daily = "temperature_2m_max",
-  response_units = list(temperature_unit = "fahrenheit") 
-)
+  daily = "daylight_duration")
 
-geocode("Michigan")
+
+# Create loop to grab all cities of interest
+# First, create list of cities of interest
+cities <- c("East Lansing", "Grand Rapids", "Detroit", "Midland", "Traverse City", "Flint")
+
+for(i in cities) {
+rest_weather <- weather_history(i,
+  start = "2020-01-01",
+  end = "2021-12-31",
+  daily = "daylight_duration")
+  weather <- cbind(aa_weather, rest_weather)
+}
+weather
+
+# Create variable for daylight duration in hours since original is in seconds
+#AA_weather$duration_hrs <- AA_weather$daily_daylight_duration/60
 
 ```
+
 ```{r}
 
 library(gtrendsR)
