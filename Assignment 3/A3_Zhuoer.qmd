@@ -12,7 +12,6 @@ library(xml2)
 library(rvest)
 library(tidyverse)
 library(robotstxt)
-library(tm)
 ```
 
 ## Web Scraping
@@ -46,6 +45,7 @@ You will see that the table needs some additional formatting. We only want rows 
 ```{r}
 pop <- pop[2:10, -3]
 colnames(pop) <- c("Year", "Population", "%Change")
+
 pop
 ```
 
@@ -86,7 +86,8 @@ Build a small loop to test whether you can build valid urls using the vector of 
 for(i in east) {
   url <- paste0("https://en.wikipedia.org/wiki/", i) # generate the url
   print(url) #print url
-} #paste() has a sep = "" by default
+} 
+#paste() has a sep = "" by default
 
 url
 ```
@@ -105,8 +106,6 @@ for(i in east) {
 }
   
 pops
-
-# Q: How should we combine the 4 tables into 1, not paralell to each other?
 ```
 
 ## Scraping and Analyzing Text Data
