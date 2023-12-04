@@ -117,12 +117,12 @@ clusters <- cutree(hc_ward, 4)
 Visualize the county clusters on a map. For this task, create a new `acs_map` object that now also includes cluster membership as a new column. This column should be called `cluster`.
 
 ```{r}
-acs_map %>%
+a <- acs_map %>%
   mutate(cluster = cutree(hc_ward, 4))
 ```
 
 ```{r, fig.height = 6.5, fig.width = 6}
-ggplot(acs_map) +
+ggplot(a) +
 geom_polygon(aes(x = long, y = lat, fill = clusters, group = group))
 
 ```
