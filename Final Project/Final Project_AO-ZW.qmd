@@ -3,6 +3,7 @@ title: "SURV727 Final Project"
 author: "Akari Oya, Zhouer Wang"
 format: html
 ---
+# Github link: <https://github.com/ZuorW/SURV727.git>
 
 ## Proposal:
 weather data vs gtrends data for seasonal depression-related words
