@@ -3,19 +3,18 @@ title: "SURV727 Final Project"
 author: "Akari Oya, Zhouer Wang"
 format: html
 ---
-# Github link: <https://github.com/ZuorW/SURV727.git>
 
+# Github link: <https://github.com/ZuorW/SURV727.git>
 
 ```{r, include = FALSE}
 library(tidyverse)
 ```
 
 
-## Question:
+# Question:
 Are there any patterns in depression-related Google searches by weather in Michigan?
 
 ## Open Meteo API
-
 For daylight duration
 ```{r}
 # Make base daylight dataset
@@ -35,7 +34,6 @@ weather_daylight <- weather_history("Detroit",
 # Check data
 str(weather_daylight)
 head(weather_daylight) # daylight seems to be in seconds
-
 ```
 
 ```{r}
@@ -84,7 +82,6 @@ other_weather_daylight <- weather_history(i,
 
   other_weather_daylight <- other_weather_daylight %>% 
     rename(daylight_sec = daily_daylight_duration) #rename column
-
   other_weather_daylight$daylight_hrs <- other_weather_daylight$daylight_sec / 3600 #create daylight by hour column
   other_weather_daylight$city <- i # add city column
   other_weather_daylight$year <- substr(other_weather_daylight$date, 1,4) #create year column
@@ -95,8 +92,7 @@ other_weather_daylight <- weather_history(i,
     mutate(weekavg_hrs = mean(daylight_hrs)) #compute weekly average daylight hours
 
   other_weather_daylight_nd <- subset(other_weather_daylight, select = -c(date, year, week)) #remove repetitive columns
-  
-  other_weather_daylight_nd <- other_weather_daylight_nd[, col_order2]
+  other_weather_daylight_nd <- other_weather_daylight_nd[, col_order2] #reorder columns
   
   weather_daylight <- cbind(weather_daylight, other_weather_daylight_nd) # combine datasets
 }
@@ -163,7 +159,6 @@ other_weather_snow <- weather_history(i,
 
   other_weather_snow <- other_weather_snow %>% 
     rename(daily_snow = daily_snowfall_sum) #rename column
-
   other_weather_snow$city <- i # add city column
   other_weather_snow$year <- substr(other_weather_snow$date, 1,4) #create year column
   
@@ -173,8 +168,7 @@ other_weather_snow <- weather_history(i,
     mutate(weekavg_snow = mean(daily_snow)) #compute weekly average daylight hours
 
   other_weather_snow_nd <- subset(other_weather_snow, select = -c(date, year, week)) #remove repetitive columns
-  
-  other_weather_snow_nd <- other_weather_snow_nd[, col_order_snow2]
+  other_weather_snow_nd <- other_weather_snow_nd[, col_order_snow2] #reorder columns
   
   weather_snow <- cbind(weather_snow, other_weather_snow_nd) # combine datasets
 }
@@ -184,13 +178,51 @@ head(weather_snow)
 
 
 
-For gtrends
+Google trends data
+```{r}
+gtrends <- read.csv("/Users/akarioya/temp/SURV727/Final Project/17_23_SearchFreqeuncies.csv", skip = 2) #allows third row to be column names
+colnames(gtrends)
+```
+
+```{r}
+# Clean gtrends data to match weather data
+# Reorder date
+gtrends <- gtrends %>% 
+  mutate(date = as.Date(Week, format = "%m/%d/%y")) %>% 
+  select(-c(Week)) %>% #remove old Week column
+  rename(light_therapy = light.therapy...Michigan.) %>% 
+  rename(winter_blues = winter.blues...Michigan.) %>% 
+  rename(SAD = Seasonal.affective.disorder...Michigan.) %>% 
+  relocate(date, .before = light_therapy) #reorder columns
+
+head(gtrends)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+For gtrends (later)
 ```{r}
 
 library(gtrendsR)
-res <- gtrends(c("antidepressants", "depression"), 
+res <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI", 
-               time = "2020-01-01 2020-12-31", 
+               time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
 plot(res)
 
