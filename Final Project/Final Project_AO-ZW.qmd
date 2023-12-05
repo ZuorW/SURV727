@@ -17,6 +17,8 @@ library(openmeteo)
 weather_variables()
 
 # Code for pulling one city's dataset
+# we probably couldn't use Ann Arbor since we couldn't locate gtrends to Ann Arbor
+# cities we could use = 
 aa_weather <- weather_history("Ann Arbor",
   start = "2020-01-01",
   end = "2021-12-31",
