@@ -206,4 +206,25 @@ city_ranking <- rest_city %>%
 #display first few rows of the ranking to find the highest searched
 head(city_ranking)
 ```
+# since my gtrends is still not working well, i will use the downloaded data for the presentation. (Will work on pulling directly from gtrends after presentation).
+library(ggplot2)
 
+# read in the data from csv files stored in this repo
+# head(trends)
+trends$Week = as.Date(trends$Week, "%m/%d/%y") # convert original data to a R readable format
+
+ggplot(data = trends, aes(x= Week, group = 1))+
+  geom_line(aes(y =light_therapy, color = "Light Therapy"), size =1.2)+
+  geom_line(aes(y =winter_blues, color = "Winter Blues"),size =1.2) +
+  geom_line(aes(y =Seasonal_affective_disorder, color = "Seasonal Affective Disorder"), size =1.2)
+# we could use this plot (A) to see the overal trend across years
+
+# then zoom to a subsection of A to see the data from 2017, plot (B)
+#head(X17)
+X17$Week = as.Date(X17$Week, "%m/%d/%y") # use this to transform the date to R readable ones
+
+ggplot(data = X17, aes(x= Week, group = 1))+
+  geom_line(aes(y =Seasonal_affective_disorder, color = "Seasonal Affective Disorder"), size =1.2) +
+  geom_line(aes(y =winter_blues, color = "Winter Blues"),size =1.2) +
+  geom_line(aes(y =light_therapy, color = "Light Therapy"), size =1.2) +
+  theme(axis.text.x = element_text(size=10))
