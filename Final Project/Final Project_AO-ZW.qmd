@@ -15,7 +15,11 @@ library(tidyverse)
 weather data vs gtrends data for seasonal depression-related words
 
 ## Open Meteo API
+
+For daylight duration
 ```{r}
+# Make base daylight dataset
+
 # Load necessary package
 library(openmeteo)
 
@@ -23,17 +27,14 @@ library(openmeteo)
 weather_variables()
 
 # Pulling one city's dataset
-# we probably can't use Ann Arbor since we couldn't locate gtrends to Ann Arbor
-# cities we could use = 
-
-weather <- weather_history("Detroit",
+weather_daylight <- weather_history("Detroit",
   start = "2017-12-01",
   end = "2023-12-01",
   daily = "daylight_duration") # pulling for dayling duration
 
 # Check data
-str(weather)
-head(weather) # daylight seems to be in seconds
+str(weather_daylight)
+head(weather_daylight) # daylight seems to be in seconds
 
 ```
 
@@ -41,29 +42,29 @@ head(weather) # daylight seems to be in seconds
 # Manipulate/clean dataset
 
 # Rename columns for ease of reading
-weather <- weather %>% 
+weather_daylight <- weather_daylight %>% 
   rename(daylight_sec = daily_daylight_duration)
 
 # Add column for city
-weather$city <- "Detroit"
+weather_daylight$city <- "Detroit"
 
 # Add column for daylight by hour
-weather$daylight_hrs <- weather$daylight_sec/ 3600
-weather$year <- substr(weather$date, 1,4)
+weather_daylight$daylight_hrs <- weather_daylight$daylight_sec/ 3600
+weather_daylight$year <- substr(weather_daylight$date, 1,4)
 
 # Add weekly average daylight column so it matches gtrends
-weather <- weather %>% 
+weather_daylight <- weather_daylight %>% 
   mutate(week = week(ymd(date))) %>% 
   group_by(week) %>% 
   mutate(weekavg_hrs = mean(daylight_hrs))
 
 # Reorder columns
-colnames(weather)
-col_order <- c("date", "year", "city", "daylight_sec",
+colnames(weather_daylight)
+col_order <- c("date", "year", "week", "city", "daylight_sec",
                "daylight_hrs", "weekavg_hrs")
-weather <- weather[, col_order]
+weather_daylight <- weather_daylight[, col_order]
 
-head(weather)
+head(weather_daylight)
 ```
 
 ```{r}
@@ -76,35 +77,111 @@ col_order2 <- c("city", "daylight_sec",
 
 # Use weather_history() to get historical weather data
 for(i in cities) {
-other_weather <- weather_history(i,
+other_weather_daylight <- weather_history(i,
   start = "2017-12-01",
   end = "2023-12-01",
   daily = "daylight_duration")
 
-  other_weather <- other_weather %>% 
+  other_weather_daylight <- other_weather_daylight %>% 
     rename(daylight_sec = daily_daylight_duration) #rename column
 
-  other_weather$daylight_hrs <- other_weather$daylight_sec / 3600 #create daylight by hour column
-  other_weather$city <- i # add city column
-  other_weather$year <- substr(weather$date, 1,4) #create year column
+  other_weather_daylight$daylight_hrs <- other_weather_daylight$daylight_sec / 3600 #create daylight by hour column
+  other_weather_daylight$city <- i # add city column
+  other_weather_daylight$year <- substr(other_weather_daylight$date, 1,4) #create year column
   
-  other_weather <- other_weather %>% 
+  other_weather_daylight <- other_weather_daylight %>% 
     mutate(week = week(ymd(date))) %>% #add week column
     group_by(week) %>%  
     mutate(weekavg_hrs = mean(daylight_hrs)) #compute weekly average daylight hours
 
-  other_weather_nd <- subset(other_weather, select = -c(date, year, week)) #remove repetitive columns
+  other_weather_daylight_nd <- subset(other_weather_daylight, select = -c(date, year, week)) #remove repetitive columns
   
-  other_weather_nd <- other_weather_nd[, col_order2]
+  other_weather_daylight_nd <- other_weather_daylight_nd[, col_order2]
   
-  weather <- cbind(weather, other_weather_nd) # combine datasets
+  weather_daylight <- cbind(weather_daylight, other_weather_daylight_nd) # combine datasets
 }
 
-head(weather)
+head(weather_daylight)
 
 ```
 
 
+
+
+Same as above but for snow fall:
+```{r}
+# Make base dataset for snow fall
+weather_snow <- weather_history("Detroit",
+  start = "2017-12-01",
+  end = "2023-12-01",
+  daily = "snowfall_sum") # unit is inches
+
+# Check data
+str(weather_snow)
+head(weather_snow)
+```
+
+```{r}
+# Manipulate/clean dataset
+
+# Rename columns for ease of reading
+weather_snow <- weather_snow %>% 
+  rename(daily_snow = daily_snowfall_sum)
+
+# Add column for city
+weather_snow$city <- "Detroit"
+
+# Add year column
+weather_snow$year <- substr(weather_snow$date, 1,4)
+
+# Add weekly average snow column so it matches gtrends
+weather_snow <- weather_snow %>% 
+  mutate(week = week(ymd(date))) %>% 
+  group_by(week) %>% 
+  mutate(weekavg_snow = mean(daily_snow))
+
+# Reorder columns
+colnames(weather_snow)
+col_order_snow <- c("date", "year", "week", "city", "daily_snow", "weekavg_snow")
+weather_snow <- weather_snow[, col_order_snow]
+
+head(weather_snow)
+```
+
+```{r}
+# Create loop to grab all cities of interest for snow fall
+
+# First, create list of cities of interest
+col_order_snow2 <- c("city", "daily_snow", "weekavg_snow")
+
+# Use weather_history() to get historical weather data
+for(i in cities) {
+other_weather_snow <- weather_history(i,
+  start = "2017-12-01",
+  end = "2023-12-01",
+  daily = "snowfall_sum")
+
+  other_weather_snow <- other_weather_snow %>% 
+    rename(daily_snow = daily_snowfall_sum) #rename column
+
+  other_weather_snow$city <- i # add city column
+  other_weather_snow$year <- substr(other_weather_snow$date, 1,4) #create year column
+  
+  other_weather_snow <- other_weather_snow %>% 
+    mutate(week = week(ymd(date))) %>% #add week column
+    group_by(week) %>%  
+    mutate(weekavg_snow = mean(daily_snow)) #compute weekly average daylight hours
+
+  other_weather_snow_nd <- subset(other_weather_snow, select = -c(date, year, week)) #remove repetitive columns
+  
+  other_weather_snow_nd <- other_weather_snow_nd[, col_order_snow2]
+  
+  weather_snow <- cbind(weather_snow, other_weather_snow_nd) # combine datasets
+}
+
+head(weather_snow)
+
+```
 
 
 
