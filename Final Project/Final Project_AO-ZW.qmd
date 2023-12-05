@@ -11,8 +11,8 @@ library(tidyverse)
 ```
 
 
-## Proposal:
-weather data vs gtrends data for seasonal depression-related words
+## Question:
+Are there any patterns in depression-related Google searches by weather in Michigan?
 
 ## Open Meteo API
 
@@ -180,7 +180,6 @@ other_weather_snow <- weather_history(i,
 }
 
 head(weather_snow)
-
 ```
 
 
