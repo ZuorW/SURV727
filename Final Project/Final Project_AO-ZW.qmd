@@ -39,53 +39,76 @@ head(weather) # daylight seems to be in seconds
 
 ```{r}
 # Manipulate/clean dataset
+
+# Rename columns for ease of reading
+weather <- weather %>% 
+  rename(daylight_sec = daily_daylight_duration)
+
 # Add column for city
 weather$city <- "Detroit"
 
 # Add column for daylight by hour
-weather$daylight_hrs <- weather$daily_daylight_duration/ 3600
+weather$daylight_hrs <- weather$daylight_sec/ 3600
+weather$year <- substr(weather$date, 1,4)
 
-head(weather)
-
-weather_weekly <- weather %>% 
+# Add weekly average daylight column so it matches gtrends
+weather <- weather %>% 
   mutate(week = week(ymd(date))) %>% 
   group_by(week) %>% 
-  summarise(daily_daylight_duration = mean(daily_daylight_duration),
-            daylight_hrs = mean(daylight_hrs))
+  mutate(weekavg_hrs = mean(daylight_hrs))
 
-# Aggregate weekly data so it matches gtrends
-week <- as.Date(cut(weather$date, "week"))
-daylight_weekly <- aggregate(daily_daylight_duration ~ week, weather, sum)
+# Reorder columns
+colnames(weather)
+col_order <- c("date", "year", "city", "daylight_sec",
+               "daylight_hrs", "weekavg_hrs")
+weather <- weather[, col_order]
 
-# Add column for daylight by hour
-daylight_weekly$daily_hrs <- daylight_weekly$daily_daylight_duration/ 3600
-
-head(daylight_weekly)
+head(weather)
 ```
 
 ```{r}
 # Create loop to grab all cities of interest
+
 # First, create list of cities of interest
 cities <- c("Ann Arbor", "Lansing", "Grand Rapids", "Kalamazoo")
+col_order2 <- c("city", "daylight_sec",
+               "daylight_hrs", "weekavg_hrs")
 
-# we use weather_history() to get historical weather data
+# Use weather_history() to get historical weather data
 for(i in cities) {
 other_weather <- weather_history(i,
   start = "2017-12-01",
   end = "2023-12-01",
   daily = "daylight_duration")
 
-  other_weather2 <- subset(other_weather, select = -c(date))
-  other_weather2$daylight_hrs <- other_weather2$daily_daylight_duration / 3600 #create daylight by hour column
-  other_weather2$city <- i # add city column
+  other_weather <- other_weather %>% 
+    rename(daylight_sec = daily_daylight_duration) #rename column
 
-  weather <- cbind(weather, other_weather2) # combine datasets
+  other_weather$daylight_hrs <- other_weather$daylight_sec / 3600 #create daylight by hour column
+  other_weather$city <- i # add city column
+  other_weather$year <- substr(weather$date, 1,4) #create year column
+  
+  other_weather <- other_weather %>% 
+    mutate(week = week(ymd(date))) %>% #add week column
+    group_by(week) %>%  
+    mutate(weekavg_hrs = mean(daylight_hrs)) #compute weekly average daylight hours
+
+  other_weather_nd <- subset(other_weather, select = -c(date, year, week)) #remove repetitive columns
+  
+  other_weather_nd <- other_weather_nd[, col_order2]
+  
+  weather <- cbind(weather, other_weather_nd) # combine datasets
 }
 
 head(weather)
 
 ```
 
+
+
+
+
+For gtrends
 ```{r}
 
 library(gtrendsR)
