@@ -5,41 +5,84 @@ format: html
 ---
 # Github link: <https://github.com/ZuorW/SURV727.git>
 
+
+```{r, include = FALSE}
+library(tidyverse)
+```
+
+
 ## Proposal:
 weather data vs gtrends data for seasonal depression-related words
 
-From Open Meteo API
+## Open Meteo API
 ```{r}
 # Load necessary package
 library(openmeteo)
 
-# see which weather variables we have data for
+# see which weather variables we have data for (not a complete list)
 weather_variables()
 
-# Code for pulling one city's dataset
-# we probably couldn't use Ann Arbor since we couldn't locate gtrends to Ann Arbor
+# Pulling one city's dataset
+# we probably can't use Ann Arbor since we couldn't locate gtrends to Ann Arbor
 # cities we could use = 
-aa_weather <- weather_history("Ann Arbor",
-  start = "2020-01-01",
-  end = "2021-12-31",
-  daily = "daylight_duration")
 
+weather <- weather_history("Detroit",
+  start = "2017-12-01",
+  end = "2023-12-01",
+  daily = "daylight_duration") # pulling for dayling duration
 
+# Check data
+str(weather)
+head(weather) # daylight seems to be in seconds
+
+```
+
+```{r}
+# Manipulate/clean dataset
+# Add column for city
+weather$city <- "Detroit"
+
+# Add column for daylight by hour
+weather$daylight_hrs <- weather$daily_daylight_duration/ 3600
+
+head(weather)
+
+weather_weekly <- weather %>% 
+  mutate(week = week(ymd(date))) %>% 
+  group_by(week) %>% 
+  summarise(daily_daylight_duration = mean(daily_daylight_duration),
+            daylight_hrs = mean(daylight_hrs))
+
+# Aggregate weekly data so it matches gtrends
+week <- as.Date(cut(weather$date, "week"))
+daylight_weekly <- aggregate(daily_daylight_duration ~ week, weather, sum)
+
+# Add column for daylight by hour
+daylight_weekly$daily_hrs <- daylight_weekly$daily_daylight_duration/ 3600
+
+head(daylight_weekly)
+```
+
+```{r}
 # Create loop to grab all cities of interest
 # First, create list of cities of interest
-cities <- c("East Lansing", "Grand Rapids", "Detroit", "Midland", "Traverse City", "Flint")
+cities <- c("Ann Arbor", "Lansing", "Grand Rapids", "Kalamazoo")
 
+# we use weather_history() to get historical weather data
 for(i in cities) {
-rest_weather <- weather_history(i,
-  start = "2020-01-01",
-  end = "2021-12-31",
+other_weather <- weather_history(i,
+  start = "2017-12-01",
+  end = "2023-12-01",
   daily = "daylight_duration")
-  weather <- cbind(aa_weather, rest_weather)
-}
-weather
 
-# Create variable for daylight duration in hours since original is in seconds
-#AA_weather$duration_hrs <- AA_weather$daily_daylight_duration/60
+  other_weather2 <- subset(other_weather, select = -c(date))
+  other_weather2$daylight_hrs <- other_weather2$daily_daylight_duration / 3600 #create daylight by hour column
+  other_weather2$city <- i # add city column
+
+  weather <- cbind(weather, other_weather2) # combine datasets
+}
+
+head(weather)
 
 ```
 
