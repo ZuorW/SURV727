@@ -10,7 +10,6 @@ You may work in pairs or individually for this assignment. Make sure you join a 
 
 # Github link: <https://github.com/ZuorW/SURV727.git>
 
-
 ```{r, include = FALSE}
 library(ggmap)
 library(censusapi)
@@ -67,7 +66,6 @@ head(acs_il_c)
 # In map data, remove spaces in subregion column
 il_map$subregion <- gsub(" ", "", il_map$subregion)
 ```
-
 
 ```{r}
 # Join ACS and map data
