@@ -248,8 +248,7 @@ fig
 ```
 
 ```{r}
-library(shiny)
-library(leaflet)
+
 
 # Add latitude and longitude conditionally based on the city
 mich_df$latitude <- ifelse(mich_df$city == "Detroit", 42.3314,
@@ -271,7 +270,12 @@ mich_df$longitude <- ifelse(mich_df$city == "Detroit", -83.0458,
                                     )
                              )
 )
+```
 
+```{r}
+library(shiny)
+library(rsconnect)
+library(leaflet)
 
 # Shiny UI
 ui <- fluidPage(
