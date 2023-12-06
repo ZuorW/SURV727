@@ -203,25 +203,103 @@ weather %>%
 
 Google trends data
 ```{r}
-gtrends <- read.csv("/Users/akarioya/temp/SURV727/Final Project/17_23_SearchFreqeuncies.csv", skip = 2) #allows third row to be column names
-colnames(gtrends)
+mich.trends <- read.csv("/Users/akarioya/temp/SURV727/Final Project/17_23_SearchFreqeuncies.csv", skip = 2) #allows third row to be column names
+colnames(mich.trends)
 ```
 
 ```{r}
-# Clean gtrends data to match weather data
+# Clean gtrends whole Michigan data to match weather data
 # Reorder date
-gtrends <- gtrends %>% 
+mich.trends <- mich.trends %>% 
   mutate(date = as.Date(Week, format = "%m/%d/%y")) %>% 
   select(-c(Week)) %>% #remove old Week column
+  mutate(year = substr(date, 1,4)) %>% 
   rename(light_therapy = light.therapy...Michigan.) %>% 
   rename(winter_blues = winter.blues...Michigan.) %>% 
   rename(SAD = Seasonal.affective.disorder...Michigan.) %>% 
   relocate(date, .before = light_therapy) #reorder columns
 
-head(gtrends)
+# Add week column that indicate number of weeks in year
+mich.trends <- mich.trends %>% 
+  mutate(week = week(ymd(date))) %>% 
+  group_by(week)
+
+head(mich.trends)
 ```
 
+Combining whole Michigan gtrends data to weather data
+```{r}
+weather_nd <- weather[, -1] #remove date column so data can merge smoothly
 
+# Merge datasets based on variables
+mich_df <- merge(mich.trends, weather_nd, by = c("week", "year"))
+head(mich_df)
+colnames(mich_df) 
+```
+Interactive visualization
+```{r}
+library(plotly)
+country_info <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2014_world_gdp_with_codes.csv")
+country_info
+
+fig <- plot_ly(df, type='choropleth', locations=df$CODE, z=df$GDP..BILLIONS., text=df$COUNTRY, colorscale="Blues")
+
+fig
+```
+
+```{r}
+library(shiny)
+library(leaflet)
+
+# Add latitude and longitude conditionally based on the city
+mich_df$latitude <- ifelse(mich_df$city == "Detroit", 42.3314,
+                            ifelse(mich_df$city == "Ann Arbor", 42.2808,
+                                   ifelse(mich_df$city == "Lansing", 42.7325,
+                                          ifelse(mich_df$city == "Grand Rapids", 42.9634,
+                                                 ifelse(mich_df$city == "Kalamazoo", 42.2917, NA)
+                                          )
+                                   )
+                            )
+)
+
+mich_df$longitude <- ifelse(mich_df$city == "Detroit", -83.0458,
+                             ifelse(mich_df$city == "Ann Arbor", -83.7430,
+                                    ifelse(mich_df$city == "Lansing", -84.5555,
+                                           ifelse(mich_df$city == "Grand Rapids", -85.6681,
+                                                  ifelse(mich_df$city == "Kalamazoo", -85.5872, NA)
+                                           )
+                                    )
+                             )
+)
+
+
+# Shiny UI
+ui <- fluidPage(
+  titlePanel("Interactive Map"),
+  leafletOutput("map")
+)
+
+# Server
+server <- function(input, output) {
+  
+  output$map <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      setView(lng = -83.7430, lat = 44.3148, zoom = 7) %>%  # Coordinates for Michigan
+      addMarkers(data = mich_df, ~longitude, ~latitude,
+                 popup = paste("Date: ", mich_df$date, "<br>",
+                               "City: ", mich_df$city, "<br>",
+                               "Weather: ", mich_df$average_daily_daylight, " hours of daylight, ",
+                               mich_df$average_daily_snow, " inches of snow", "<br>",
+                               "Trends: Light Therapy - ", mich_df$light_therapy, ", ",
+                               "SAD - ", mich_df$seasonal_affective_disorder, ", ",
+                               "Winter Blues - ", mich_df$winter_blues))
+  })
+}
+
+shinyApp(ui, server)
+
+```
 
 
 
