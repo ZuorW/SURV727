@@ -17,15 +17,13 @@ Are there any patterns in depression-related Google searches by weather in Michi
 ## Open Meteo API
 For daylight duration
 ```{r}
-# Make base daylight dataset
-
 # Load necessary package
 library(openmeteo)
 
 # see which weather variables we have data for (not a complete list)
 weather_variables()
 
-# Pulling one city's dataset
+# Test code with one city first
 weather_daylight <- weather_history("Detroit",
   start = "2017-12-01",
   end = "2023-12-01",
@@ -37,7 +35,7 @@ head(weather_daylight) # daylight seems to be in seconds
 ```
 
 ```{r}
-# Manipulate/clean dataset
+# Manipulate/clean dataset with one city first
 
 # Rename columns for ease of reading
 weather_daylight <- weather_daylight %>% 
@@ -58,8 +56,7 @@ weather_daylight <- weather_daylight %>%
 
 # Reorder columns
 colnames(weather_daylight)
-col_order <- c("date", "year", "week", "city", "daylight_sec",
-               "daylight_hrs", "weekavg_hrs")
+col_order <- c("date", "year", "week", "city", "daylight_hrs", "weekavg_hrs")
 weather_daylight <- weather_daylight[, col_order]
 
 head(weather_daylight)
@@ -69,44 +66,40 @@ head(weather_daylight)
 # Create loop to grab all cities of interest
 
 # First, create list of cities of interest
-cities <- c("Ann Arbor", "Lansing", "Grand Rapids", "Kalamazoo")
-col_order2 <- c("city", "daylight_sec",
-               "daylight_hrs", "weekavg_hrs")
+cities <- c("Detroit", "Ann Arbor", "Lansing", "Grand Rapids", "Kalamazoo")
+
+# Create object to store each city as a data frame
+daylight_dataframes <- list()
 
 # Use weather_history() to get historical weather data
 for(i in cities) {
-other_weather_daylight <- weather_history(i,
+weather_daylight <- weather_history(i,
   start = "2017-12-01",
   end = "2023-12-01",
   daily = "daylight_duration")
 
-  other_weather_daylight <- other_weather_daylight %>% 
+  weather_daylight <- weather_daylight %>% 
     rename(daylight_sec = daily_daylight_duration) #rename column
-  other_weather_daylight$daylight_hrs <- other_weather_daylight$daylight_sec / 3600 #create daylight by hour column
-  other_weather_daylight$city <- i # add city column
-  other_weather_daylight$year <- substr(other_weather_daylight$date, 1,4) #create year column
+  weather_daylight$daylight_hrs <- weather_daylight$daylight_sec / 3600 #create daylight by hour column
+  weather_daylight$city <- i # add city column
+  weather_daylight$year <- substr(weather_daylight$date, 1,4) #create year column
   
-  other_weather_daylight <- other_weather_daylight %>% 
+  weather_daylight <- weather_daylight %>% 
     mutate(week = week(ymd(date))) %>% #add week column
     group_by(week) %>%  
     mutate(weekavg_hrs = mean(daylight_hrs)) #compute weekly average daylight hours
 
-  other_weather_daylight_nd <- subset(other_weather_daylight, select = -c(date, year, week)) #remove repetitive columns
-  other_weather_daylight_nd <- other_weather_daylight_nd[, col_order2] #reorder columns
-  
-  weather_daylight <- cbind(weather_daylight, other_weather_daylight_nd) # combine datasets
+  weather_daylight <- weather_daylight[, col_order] #reorder columns
+  daylight_dataframes[[i]] <- weather_daylight #add new data frame to list
 }
 
-head(weather_daylight)
-
+head(daylight_dataframes)
 ```
-
-
 
 
 Same as above but for snow fall:
 ```{r}
-# Make base dataset for snow fall
+# Test code with one city first
 weather_snow <- weather_history("Detroit",
   start = "2017-12-01",
   end = "2023-12-01",
@@ -118,63 +111,93 @@ head(weather_snow)
 ```
 
 ```{r}
-# Manipulate/clean dataset
-
-# Rename columns for ease of reading
-weather_snow <- weather_snow %>% 
-  rename(daily_snow = daily_snowfall_sum)
-
-# Add column for city
-weather_snow$city <- "Detroit"
-
-# Add year column
-weather_snow$year <- substr(weather_snow$date, 1,4)
-
-# Add weekly average snow column so it matches gtrends
-weather_snow <- weather_snow %>% 
-  mutate(week = week(ymd(date))) %>% 
-  group_by(week) %>% 
-  mutate(weekavg_snow = mean(daily_snow))
-
-# Reorder columns
-colnames(weather_snow)
-col_order_snow <- c("date", "year", "week", "city", "daily_snow", "weekavg_snow")
-weather_snow <- weather_snow[, col_order_snow]
-
-head(weather_snow)
-```
-
-```{r}
 # Create loop to grab all cities of interest for snow fall
 
 # First, create list of cities of interest
-col_order_snow2 <- c("city", "daily_snow", "weekavg_snow")
+col_order_snow2 <- c("date", "week", "city", "daily_snow", "weekavg_snow")
+
+# Create object to store each city as a data frame
+snow_dataframes <- list()
 
 # Use weather_history() to get historical weather data
 for(i in cities) {
-other_weather_snow <- weather_history(i,
+weather_snow <- weather_history(i,
   start = "2017-12-01",
   end = "2023-12-01",
   daily = "snowfall_sum")
 
-  other_weather_snow <- other_weather_snow %>% 
+  weather_snow <- weather_snow %>% 
     rename(daily_snow = daily_snowfall_sum) #rename column
-  other_weather_snow$city <- i # add city column
-  other_weather_snow$year <- substr(other_weather_snow$date, 1,4) #create year column
+  weather_snow$city <- i # add city column
+  weather_snow$year <- substr(weather_snow$date, 1,4) #create year column
   
-  other_weather_snow <- other_weather_snow %>% 
+  weather_snow <- weather_snow %>% 
     mutate(week = week(ymd(date))) %>% #add week column
     group_by(week) %>%  
     mutate(weekavg_snow = mean(daily_snow)) #compute weekly average daylight hours
 
-  other_weather_snow_nd <- subset(other_weather_snow, select = -c(date, year, week)) #remove repetitive columns
-  other_weather_snow_nd <- other_weather_snow_nd[, col_order_snow2] #reorder columns
-  
-  weather_snow <- cbind(weather_snow, other_weather_snow_nd) # combine datasets
+  weather_snow <- weather_snow[, col_order_snow2] #reorder columns
+  snow_dataframes[[i]] <- weather_snow #add new data frame to list
 }
 
-head(weather_snow)
+head(snow_dataframes)
 ```
+
+Combining city data
+```{r}
+# Combine all city dataframes into one long dataframe
+daylight_long <- bind_rows(daylight_dataframes)
+head(daylight_long)
+
+# Combine all city dataframes into one long dataframe
+snow_long <- bind_rows(snow_dataframes)
+head(snow_long)
+```
+
+
+Combining daylight and snowfall data
+```{r}
+weather <- merge(daylight_long, snow_long, by = c("date", "week", "city"))
+head(weather)
+colnames(weather) 
+```
+
+
+Making plots for weather data
+```{r}
+ggplot(data = weather, aes(x= date)) +
+  geom_line(aes(y = daily_snow, color = city))
+
+ggplot(data = weather, aes(x = date)) +
+  geom_line(aes(y = daylight_hrs, color = city)) +
+   scale_x_date(limits = as.Date(c("2018-01-01","2018-12-31"))) +
+   ggtitle("2018 zoom example")
+
+ggplot(data = weather, aes(x = date)) +
+  geom_line(aes(y = weekavg_snow, color = city)) +
+   scale_x_date(limits = as.Date(c("2018-01-01","2018-12-31"))) +
+   ggtitle("2018 zoom example")
+```
+
+```{r}
+weather %>% 
+  group_by(year) %>% 
+  summarise(mean_daily_snow = mean(daily_snow),
+            min_daily_snow = min(daily_snow),
+            max_daily_snow = max(daily_snow))
+weather %>% 
+  group_by(year, city) %>% 
+  summarise(mean_daily_snow = mean(daily_snow),
+            min_daily_snow = min(daily_snow),
+            max_daily_snow = max(daily_snow))
+
+weather %>% 
+  group_by(year, city) %>% 
+  summarise(mean_daylight = mean(daylight_hrs),
+            min_daylight = min(daylight_hrs),
+            max_daylight = max(daylight_hrs))
+```
+
 
 
 
@@ -239,48 +262,24 @@ city_ranking <- rest_city %>%
 head(city_ranking)
 ```
 # since my gtrends is still not working well, i will use the downloaded data for the presentation. (Will work on pulling directly from gtrends after presentation).
-
 library(ggplot2)
-head(trends)
-trends$Week = as.Date(trends$Week, "%m/%d/%y")
+
+# read in the data from csv files stored in this repo
+# head(trends)
+trends$Week = as.Date(trends$Week, "%m/%d/%y") # convert original data to a R readable format
+
 ggplot(data = trends, aes(x= Week, group = 1))+
   geom_line(aes(y =light_therapy, color = "Light Therapy"), size =1.2)+
   geom_line(aes(y =winter_blues, color = "Winter Blues"),size =1.2) +
-  geom_line(aes(y =Seasonal_affective_disorder, color = "Seasonal Affective Disorder"), size =1.2) +
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  labs(title = "Search Frequencies for indicators of SAD from 2017-2023", y= "Search Frequency") 
+  geom_line(aes(y =Seasonal_affective_disorder, color = "Seasonal Affective Disorder"), size =1.2)
 # we could use this plot (A) to see the overal trend across years
 
-
-# then zoom to a subsection of A to see the data from 2017
-head(X17)
-X17$Week = as.Date(X17$Week, "%m/%d/%y")
-# use this to transform the date to R_readable ones
+# then zoom to a subsection of A to see the data from 2017, plot (B)
+#head(X17)
+X17$Week = as.Date(X17$Week, "%m/%d/%y") # use this to transform the date to R readable ones
 
 ggplot(data = X17, aes(x= Week, group = 1))+
   geom_line(aes(y =Seasonal_affective_disorder, color = "Seasonal Affective Disorder"), size =1.2) +
   geom_line(aes(y =winter_blues, color = "Winter Blues"),size =1.2) +
   geom_line(aes(y =light_therapy, color = "Light Therapy"), size =1.2) +
-  theme(axis.text.x = element_text(size=10))+
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  labs(title = "Search Frequencies for indicators of SAD in 2017", y= "Search Frequency") 
-  
-
-
-# then zoom to a subsection of A to see the data from 2020 to see potential impacts of covid-19 lockdown "Prolonged Search Intensities for Light Therapy"
-head(covid)
-covid$Week = as.Date(covid$Week, "%m/%d/%y")
-# use this to transform the date to R_readable ones
-
-ggplot(data = covid, aes(x= Week, group = 1))+
-  geom_line(aes(y =Seasonale_affective_disorder, color = "Seasonal Affective Disorder"), size =1.2) +
-  geom_line(aes(y =winter_blues, color = "Winter Blues"),size =1.2) +
-  geom_line(aes(y =light_therapy, color = "Light Therapy"), size =1.2) +
-  theme(axis.text.x = element_text(size=10))+
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  labs(title = "Search Frequencies for indicators of SAD in 2020 (covid)", y= "Search Frequency") 
-
-
+  theme(axis.text.x = element_text(size=10))
