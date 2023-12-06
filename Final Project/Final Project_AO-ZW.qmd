@@ -171,12 +171,18 @@ ggplot(data = weather, aes(x= date)) +
 ggplot(data = weather, aes(x = date)) +
   geom_line(aes(y = daylight_hrs, color = city)) +
    scale_x_date(limits = as.Date(c("2018-01-01","2018-12-31"))) +
-   ggtitle("2018 zoom example")
+   ggtitle("Average Weekly Daylight in 2018") + xlab("Week") + ylab("Daylight (hours)")
 
+ggplot(data = weather, aes(x = date)) +
+  geom_line(aes(y = daylight_hrs, color = city), show.legend = FALSE) +
+  ggtitle("Average Weekly Daylight: 2018 - 2023") + xlab("Year") + ylab("Daylight (hours)")
+```
+  
+```{r}
 ggplot(data = weather, aes(x = date)) +
   geom_line(aes(y = weekavg_snow, color = city)) +
    scale_x_date(limits = as.Date(c("2018-01-01","2018-12-31"))) +
-   ggtitle("2018 zoom example")
+   ggtitle("Average Weekly Snowfall in 2018") + xlab("Week") + ylab("Snowfall (mm)")
 ```
 
 ```{r}
@@ -236,17 +242,7 @@ mich_df <- merge(mich.trends, weather_nd, by = c("week", "year"))
 head(mich_df)
 colnames(mich_df) 
 ```
-Interactive visualization
-```{r}
-library(plotly)
-country_info <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2014_world_gdp_with_codes.csv")
-country_info
-
-fig <- plot_ly(df, type='choropleth', locations=df$CODE, z=df$GDP..BILLIONS., text=df$COUNTRY, colorscale="Blues")
-
-fig
-```
-
+Interactive visualization (not useful right now because of missing city data in gtrends)
 ```{r}
 
 
@@ -323,6 +319,8 @@ shinyApp(ui, server)
 
 For gtrends (later)
 ```{r}
+gtrendsR::gtrends_auth(client.email = "akarioya@umich.com", path = "path/to/credentials")
+
 
 library(gtrendsR)
 res <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
