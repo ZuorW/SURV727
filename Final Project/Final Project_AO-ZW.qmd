@@ -245,8 +245,6 @@ colnames(mich_df)
 
 Creating interactive visualization (not useful right now because of missing city data in gtrends)
 ```{r}
-
-
 # Add latitude and longitude conditionally based on the city
 mich_df$latitude <- ifelse(mich_df$city == "Detroit", 42.3314,
                             ifelse(mich_df$city == "Ann Arbor", 42.2808,
@@ -351,7 +349,7 @@ head(sort(city_ranking$`winter blues`, decreasing = TRUE))
 
 
 Interest by city data above does not seem to have a lot of data points, so we try another method: query each major city separately.
-There is no manual for which geo code to use for Michigan cities, but the URL on the gtrends website after selecting the filters displays a geo code. So we used this to see if it will pick up more specific data.
+There is no manual for which geo code to use for Michigan cities, but the URL on the gtrends website after selecting the filters displays a geo code. So we used this to see if it will pick up more specific data. (For example: https://trends.google.com/trends/explore?date=2017-12-01%202023-12-01&*geo=US-MI*-540&q=light%20therapy&hl=en-US)
 ```{r}
 detroit_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI-505", # geo code for Detroit from gtrends website URL 
@@ -363,20 +361,49 @@ head(detroit_trends$interest_over_time)
 write.csv(SADtrends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
 ```
 
-Repeat with other cities
+Repeat with other cities (creating a loop did not work)
 ```{r}
-g_cities <- c("US-MI-505", "US-MI-551", "US-MI-583","US-MI-513", "US-MI-563", "US-MI-540")
-# g_cities (in order) = Detroit, Lansing, Alpena, Flint-Saginaw-BayCity, GrandRapids-Kalamazoo-Battle Creek, Marquette, Traverse City-Cadillac
+# List of city geo codes taken from gtrends URL
+# Lansing = "US-MI-551", 
+# Alpena = "US-MI-583"
+# Flint-Saginaw-BayCity = "US-MI-513"
+# GrandRapids-Kalamazoo-Battle Creek = "US-MI-563"
+# Marquette = "US-MI-553"
+# Traverse City-Cadillac = "US-MI-540"
 
-for(i in g_cities) {
 lansing_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
-               geo = i,  
+               geo = "US-MI-551",  
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
+write.csv(lansing_trends$interest_over_time, "SADtrends_Lansing.csv") # save as csv
 
 head(lansing_trends) #geo code seems to include Detroit and surrounding South East Michigan cities
 head(lansing_trends$interest_over_time)
+
+
+
+# Use weather_history() to get historical weather data
+for(i in cities) {
+weather_snow <- weather_history(i,
+  start = "2017-12-01",
+  end = "2023-12-01",
+  daily = "snowfall_sum")
+
+  weather_snow <- weather_snow %>% 
+    rename(daily_snow = daily_snowfall_sum) #rename column
+  weather_snow$city <- i # add city column
+  weather_snow$year <- substr(weather_snow$date, 1,4) #create year column
+  
+  weather_snow <- weather_snow %>% 
+    mutate(week = week(ymd(date))) %>% #add week column
+    group_by(week) %>%  
+    mutate(weekavg_snow = mean(daily_snow)) #compute weekly average daylight hours
+
+  weather_snow <- weather_snow[, col_order_snow2] #reorder columns
+  snow_dataframes[[i]] <- weather_snow #add new data frame to list
 }
+
+head(snow_dataframes)
 ```
 
 
