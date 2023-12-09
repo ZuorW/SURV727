@@ -357,8 +357,9 @@ detroit_trends <- gtrends(c("light therapy", "seasonal affective disorder", "win
                geo = "US-MI-505", # geo code for Detroit from gtrends website URL 
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
+detroit_trends <- as_tibble(detroit_trends$interest_over_time) 
+write.csv(detroit_trends, "SADtrends_Detroit.csv") # save as csv
 
-head(detroit_trends) #geo code seems to include Detroit and surrounding South East Michigan cities
 head(detroit_trends$interest_over_time)
 write.csv(SADtrends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
 ```
@@ -366,8 +367,8 @@ write.csv(SADtrends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
 Repeat with other cities (creating a loop gave me the connection error message)
 ```{r}
 # List of city geo codes taken from gtrends URL
-# Lansing = "US-MI-551", 
-# Alpena = "US-MI-583"
+# Lansing = "US-MI-551"
+# Alpena = "US-MI-583" - did not have any data, excluded
 # Flint-Saginaw-BayCity = "US-MI-513"
 # GrandRapids-Kalamazoo-BattleCreek = "US-MI-563"
 # Marquette = "US-MI-553"
@@ -377,37 +378,41 @@ lansing_trends <- gtrends(c("light therapy", "seasonal affective disorder", "win
                geo = "US-MI-551",  
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
-write.csv(lansing_trends$interest_over_time, "SADtrends_Lansing.csv") # save as csv
-
-alpena_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
-               geo = "US-MI-583",  
-               time = "2017-12-01 2023-12-01", 
-               low_search_volume = TRUE)
-write.csv(alpena_trends$interest_over_time, "SADtrends_Alpena.csv") # save as csv
+lansing_trends <- as_tibble(lansing_trends$interest_over_time) 
+write.csv(lansing_trends, "SADtrends_Lansing.csv") # save as csv
 
 flint_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI-513",  
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
-write.csv(flint_trends$interest_over_time, "SADtrends_Flint-Saginaw-BayCity.csv") # save as csv
+flint_trends <- as_tibble(flint_trends$interest_over_time)
+write.csv(flint_trends, "SADtrends_Flint-Saginaw-BayCity.csv")
 
 gr_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI-563",  
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
-write.csv(gr_trends$interest_over_time, "SADtrends_GrandRapids-Kalamazoo-BattleCreek.csv") # save as csv
+gr_trends <- as_tibble(gr_trends$interest_over_time)
+write.csv(gr_trends, "SADtrends_GrandRapids-Kalamazoo-BattleCreek.csv") # save as csv
 
 marq_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI-553",  
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
-write.csv(marq_trends$interest_over_time, "SADtrends_Marquette.csv") # save as csv
+marq_trends <- as_tibble(marq_trends$interest_over_time)
+write.csv(marq_trends, "SADtrends_Marquette.csv") # save as csv
 
 trav_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI-540",  
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
-write.csv(trav_trends$interest_over_time, "SADtrends_Traverse City-Cadillac.csv") # save as csv
+trav_trends <- as_tibble(trav_trends$interest_over_time)
+write.csv(trav_trends, "SADtrends_Traverse City-Cadillac.csv") # save as csv
+
+# Combine all into one dataset
+SAD_bycity <- bind_rows(detroit_trends, lansing_trends, alpena_trends, flint_trends, gr_trends, marq_trends, trav_trends)
+summary(SAD_bycity)
+write.csv(SAD_bycity, "SADtrends_bycity.csv") # save as csv
 ```
 
 
