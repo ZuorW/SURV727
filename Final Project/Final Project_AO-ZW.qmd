@@ -8,6 +8,8 @@ format: html
 
 ```{r, include = FALSE}
 library(tidyverse)
+library(openmeteo)
+library(gtrendsR)
 ```
 
 
@@ -361,13 +363,13 @@ head(detroit_trends$interest_over_time)
 write.csv(SADtrends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
 ```
 
-Repeat with other cities (creating a loop did not work)
+Repeat with other cities (creating a loop gave me the connection error message)
 ```{r}
 # List of city geo codes taken from gtrends URL
 # Lansing = "US-MI-551", 
 # Alpena = "US-MI-583"
 # Flint-Saginaw-BayCity = "US-MI-513"
-# GrandRapids-Kalamazoo-Battle Creek = "US-MI-563"
+# GrandRapids-Kalamazoo-BattleCreek = "US-MI-563"
 # Marquette = "US-MI-553"
 # Traverse City-Cadillac = "US-MI-540"
 
@@ -377,34 +379,39 @@ lansing_trends <- gtrends(c("light therapy", "seasonal affective disorder", "win
                low_search_volume = TRUE)
 write.csv(lansing_trends$interest_over_time, "SADtrends_Lansing.csv") # save as csv
 
-head(lansing_trends) #geo code seems to include Detroit and surrounding South East Michigan cities
-head(lansing_trends$interest_over_time)
+alpena_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+               geo = "US-MI-583",  
+               time = "2017-12-01 2023-12-01", 
+               low_search_volume = TRUE)
+write.csv(alpena_trends$interest_over_time, "SADtrends_Alpena.csv") # save as csv
 
+flint_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+               geo = "US-MI-513",  
+               time = "2017-12-01 2023-12-01", 
+               low_search_volume = TRUE)
+write.csv(flint_trends$interest_over_time, "SADtrends_Flint-Saginaw-BayCity.csv") # save as csv
 
+gr_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+               geo = "US-MI-563",  
+               time = "2017-12-01 2023-12-01", 
+               low_search_volume = TRUE)
+write.csv(gr_trends$interest_over_time, "SADtrends_GrandRapids-Kalamazoo-BattleCreek.csv") # save as csv
 
-# Use weather_history() to get historical weather data
-for(i in cities) {
-weather_snow <- weather_history(i,
-  start = "2017-12-01",
-  end = "2023-12-01",
-  daily = "snowfall_sum")
+marq_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+               geo = "US-MI-553",  
+               time = "2017-12-01 2023-12-01", 
+               low_search_volume = TRUE)
+write.csv(marq_trends$interest_over_time, "SADtrends_Marquette.csv") # save as csv
 
-  weather_snow <- weather_snow %>% 
-    rename(daily_snow = daily_snowfall_sum) #rename column
-  weather_snow$city <- i # add city column
-  weather_snow$year <- substr(weather_snow$date, 1,4) #create year column
-  
-  weather_snow <- weather_snow %>% 
-    mutate(week = week(ymd(date))) %>% #add week column
-    group_by(week) %>%  
-    mutate(weekavg_snow = mean(daily_snow)) #compute weekly average daylight hours
-
-  weather_snow <- weather_snow[, col_order_snow2] #reorder columns
-  snow_dataframes[[i]] <- weather_snow #add new data frame to list
-}
-
-head(snow_dataframes)
+trav_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+               geo = "US-MI-540",  
+               time = "2017-12-01 2023-12-01", 
+               low_search_volume = TRUE)
+write.csv(trav_trends$interest_over_time, "SADtrends_Traverse City-Cadillac.csv") # save as csv
 ```
+
+
+
 
 
 From Zhouer's code
