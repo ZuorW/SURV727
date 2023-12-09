@@ -242,7 +242,8 @@ mich_df <- merge(mich.trends, weather_nd, by = c("week", "year"))
 head(mich_df)
 colnames(mich_df) 
 ```
-Interactive visualization (not useful right now because of missing city data in gtrends)
+
+Creating interactive visualization (not useful right now because of missing city data in gtrends)
 ```{r}
 
 
@@ -268,6 +269,7 @@ mich_df$longitude <- ifelse(mich_df$city == "Detroit", -83.0458,
 )
 ```
 
+Trying Shiny app
 ```{r}
 library(shiny)
 library(rsconnect)
@@ -305,46 +307,81 @@ shinyApp(ui, server)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-For gtrends (later)
+For Google Trends data
 ```{r}
-gtrendsR::gtrends_auth(client.email = "akarioya@umich.com", path = "path/to/credentials")
-
-
+# Query keywords
 library(gtrendsR)
-res <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+SADtrends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI", 
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
-plot(res)
+plot(SADtrends)
 
-#transform the data.frame into tibble
-rest_city <- tibble(res$interest_by_city)
+# Grab each dataset and save as CSV in case we have issues querying again
+# interest by city
+trends_city <- SADtrends$interest_by_city
+write.csv(rest_city, "SADtrends_interest_by_city.csv")
 
-#reshape the data & sort loans column in descending order
-city_ranking <- rest_city %>%
-  pivot_wider(names_from = keyword, 
-              values_from = hits) %>%
-  arrange(., desc(loans))
+# interest over time
+trends_time <- SADtrends$interest_over_time
+write.csv(trends_time, "SADtrends_interest_over_time.csv")
 
-#display first few rows of the ranking to find the highest searched
-head(city_ranking)
+# interest by dma (seems like certain big cities)
+trends_dma <- SADtrends$interest_by_dma
+write.csv(trends_dma, "SADtrends_interest_by_dma.csv")
+
+# interest by dma (seems like certain big cities)
+trends_related <- SADtrends$related_queries
+write.csv(trends_related, "SADtrends_related_queries.csv")
 ```
-# since my gtrends is still not working well, i will use the downloaded data for the presentation. (Will work on pulling directly from gtrends after presentation).
-library(ggplot2)
 
-# read in the data from csv files stored in this repo
+
+Examining interest over city data
+```{r}
+# Reshape data so each keyword becomes a column and each row is a city
+city_ranking <- trends_city %>%
+  pivot_wider(names_from = keyword, 
+              values_from = hits)
+
+# See data sorted by hits
+head(sort(city_ranking$`light therapy`, decreasing = TRUE))
+head(sort(city_ranking$`seasonal affective disorder`, decreasing = TRUE)) # this column seems to be the only one with data points
+head(sort(city_ranking$`winter blues`, decreasing = TRUE))
+```
+
+
+Interest by city data above does not seem to have a lot of data points, so we try another method: query each major city separately.
+There is no manual for which geo code to use for Michigan cities, but the URL on the gtrends website after selecting the filters displays a geo code. So we used this to see if it will pick up more specific data.
+```{r}
+detroit_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+               geo = "US-MI-505", # geo code for Detroit from gtrends website URL 
+               time = "2017-12-01 2023-12-01", 
+               low_search_volume = TRUE)
+
+head(detroit_trends) #geo code seems to include Detroit and surrounding South East Michigan cities
+head(detroit_trends$interest_over_time)
+write.csv(SADtrends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
+```
+
+Repeat with other cities
+```{r}
+g_cities <- c("US-MI-505", "US-MI-551", "US-MI-583","US-MI-513", "US-MI-563", "US-MI-540")
+# g_cities (in order) = Detroit, Lansing, Alpena, Flint-Saginaw-BayCity, GrandRapids-Kalamazoo-Battle Creek, Marquette, Traverse City-Cadillac
+
+for(i in g_cities) {
+lansing_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
+               geo = i,  
+               time = "2017-12-01 2023-12-01", 
+               low_search_volume = TRUE)
+
+head(lansing_trends) #geo code seems to include Detroit and surrounding South East Michigan cities
+head(lansing_trends$interest_over_time)
+}
+```
+
+
+From Zhouer's code
+```{r}
 # head(trends)
 trends$Week = as.Date(trends$Week, "%m/%d/%y") # convert original data to a R readable format
 
@@ -363,3 +400,4 @@ ggplot(data = X17, aes(x= Week, group = 1))+
   geom_line(aes(y =winter_blues, color = "Winter Blues"),size =1.2) +
   geom_line(aes(y =light_therapy, color = "Light Therapy"), size =1.2) +
   theme(axis.text.x = element_text(size=10))
+```
