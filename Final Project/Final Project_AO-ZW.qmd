@@ -361,7 +361,7 @@ detroit_trends <- as_tibble(detroit_trends$interest_over_time)
 write.csv(detroit_trends, "SADtrends_Detroit.csv") # save as csv
 
 head(detroit_trends$interest_over_time)
-write.csv(SADtrends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
+write.csv(detroit_trends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
 ```
 
 Repeat with other cities (creating a loop gave me the connection error message)
@@ -416,6 +416,42 @@ write.csv(SAD_bycity, "SADtrends_bycity.csv") # save as csv
 ```
 
 
+```{r}
+# Clean data
+SAD_bycity_grp <- SAD_bycity %>% 
+  mutate(date = as.Date(date, format = "%Y-%m/%d")) %>% 
+  select(-c(time, gprop, category, interest_by_city)) %>% #remove unnecessary variables
+  mutate(year = substr(date, 1,4)) %>% #create year variable
+  mutate(month = substr(date,6,7)) %>% #create month variable  
+  group_by(date, geo, year, month, keyword) %>%
+  summarise(hits = sum(hits)) %>% 
+  ungroup() %>% 
+  rename(city = geo)
+
+# Recode city values
+SAD_bycity_grp$city <- recode(SAD_bycity_grp$city, 
+                              "US-MI-505" = "Detroit",
+                              "US-MI-551" = "Lansing",
+                              "US-MI-513" = "Flint-Saginaw-Bay City",
+                              "US-MI-563" = "Grand Rapids-Kalamazoo-Battle Creek",
+                              "US-MI-553" = "Marquette",
+                              "US-MI-540" = "Traverse City-Cadillac")
+
+# Make keywords into columns with hits as values
+SAD_bycity_grp <- SAD_bycity_grp %>%
+  spread(key = keyword, value = hits)
+head(SAD_bycity_grp)
+```
+
+Plots
+```{r}
+SAD_bycity_grp %>% ggplot(aes(x= date)) +
+  geom_line(aes(y = `light therapy`, color = "Light Therapy"), linewidth = 1.2)+
+  geom_line(aes(y = `winter blues`, color = "Winter Blues"), linewidth = 1.2) +
+  geom_line(aes(y = `seasonal affective disorder`, color = "Seasonal Affective Disorder"), linewidth = 1.2) + 
+  scale_x_date(limits = as.Date(c("2018-01-01","2018-12-31"))) +
+  ggtitle("Search hits in 2018") + xlab("Month") + ylab("Search hits")
+```
 
 
 
