@@ -532,14 +532,12 @@ shinyApp(ui = ui, server = server)
 
 # Server original
 
-```{r, echo=FALSE}
+
 server \<- function(input, output) {
 
 output$map <- renderLeaflet({  leaflet() %>%  addTiles() %>%  setView(lng = -83.7430, lat = 44.3148, zoom = 7) %>% # Coordinates for Michigan  addMarkers(data = mich_df, ~longitude, ~latitude,  popup = paste("Date: ", mich_df$date, "<br>", "City:", mich_df$city, "<br>",  "Weather: ", mich_df$average_daily_daylight, " hours of daylight, ", mich_df$average_daily_snow, " inches of snow", "<br>",  "Trends: Light Therapy - ", mich_df$light_therapy,", ","SAD - ", mich_df$seasonal_affective_disorder, ", ",  "Winter Blues - ", mich_df$winter_blues)) }) }
 
 shinyApp(ui, server)
-  
-```
 
 # Conclusion
 
