@@ -455,7 +455,7 @@ Finally, we created another interactive visualization through the "shiny" packag
 
 The Shiny app is accessible through the Qmd file "SURV727 Final Project Report.qmd" in the Github link.
 
-```{r}
+```{r, include = FALSE}
 library(shiny)
 library(leaflet)
 library(htmlwidgets)
@@ -522,7 +522,7 @@ server <- function(input, output, session) {
 
 ```
 
-```{r}
+```{r, include = FALSE}
 shinyApp(ui = ui, server = server)
 ```
 
