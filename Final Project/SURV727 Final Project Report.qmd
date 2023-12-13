@@ -317,7 +317,8 @@ trends_city <- read_csv("SADtrends_interest_by_city.csv")
 trends_time %>% 
   ggplot(aes(x = date, y = hits)) + 
   geom_line(aes(y = hits, color = keyword)) +
-  ggtitle("Search Frequencies between 2018-2023") + xlab("Date") + ylab("Hits Frequency")
+  ggtitle("Search Frequencies between 2018-2023") + xlab("Date") + ylab("Hits Frequency") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 ```{r, include=FALSE}
