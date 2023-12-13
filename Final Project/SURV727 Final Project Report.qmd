@@ -451,117 +451,14 @@ SAD_bycity_grp %>% ggplot(aes(x= date)) +
 
 ### Weather Data + Google Search Frequencies
 
-Finally, we created another interactive visualization through the "shiny" package in R. This interactive map is centered at the coordinates for Michigan and places city markers at locations based on longitude and latitude. When a user clicks on a marker, a popup will display with information about the date, city, average daylight, snowfall, and search frequencies for SAD-related terms.
+Finally, we created another interactive visualization through the "shiny" package in R. This interactive map is centered at the coordinates for Michigan and places city markers at locations based on longitude and latitude. Sliders change dynamically based on the year and week chosen. When a user clicks on a marker, a popup will display with information about the search frequencies for SAD-related terms.
 
-The Shiny app is accessible at: <link>
-
-```{r, include=FALSE}
-# First, add necessary info for Shiny 
-# Add latitude and longitude conditionally based on the city
-mich_df$lat <- ifelse(mich_df$city == "Detroit", 42.3314,
-                            ifelse(mich_df$city == "Ann Arbor", 42.2808,
-                                   ifelse(mich_df$city == "Lansing", 42.7325,
-                                          ifelse(mich_df$city == "Grand Rapids", 42.9634,
-                                                 ifelse(mich_df$city == "Kalamazoo", 42.2917, NA)
-                                          )
-                                   )
-                            )
-)
-
-mich_df$lng <- ifelse(mich_df$city == "Detroit", -83.0458,
-                             ifelse(mich_df$city == "Ann Arbor", -83.7430,
-                                    ifelse(mich_df$city == "Lansing", -84.5555,
-                                           ifelse(mich_df$city == "Grand Rapids", -85.6681,
-                                                  ifelse(mich_df$city == "Kalamazoo", -85.5872, NA)
-                                           )
-                                    )
-                             )
-)
-```
-
-```{r}
-ui <- fluidPage(
-    titlePanel("Weather Trends Visualization - Animated"),
-
-    sidebarLayout(
-        sidebarPanel(
-            actionButton("playButton", "Play Animation"),
-            actionButton("stopButton", "Stop Animation"),
-            selectInput("variableInput", "Choose Variable:", choices = c("Daylight", "Snowfall")),
-            textOutput("weekIndicator")
-        ),
-        mainPanel(leafletOutput("map"))
-    )
-)
-
-server <- function(input, output, session) {
-    
-    # Reactive value for the current week
-    currentWeek <- reactiveVal(1)
-
-    # Update the map based on the selected variable
-    updateMap <- function(week, variable) {
-        if (is.null(week)) {
-            return(NULL)
-        }
-
-        data <- mich_df %>%
-            filter(week == week)
-
-        map <- leaflet(data) %>% addTiles()
-
-        if (variable == "Daylight") {
-            map <- map %>% addCircleMarkers(~lng, ~lat, radius = ~weekavg_hrs / 10,
-                                            color = "#FFA500", fillOpacity = 0.8)
-        } else {
-            map <- map %>% addCircleMarkers(~lng, ~lat, radius = ~weekavg_snow / 10,
-                                            color = "#0000FF", fillOpacity = 0.8)
-        }
-
-        return(map)
-    }
-
-    # Observe the play button
-    observeEvent(input$playButton, {
-        invalidateLater(1000, session)  # Update every second
-        currentWeek(isolate(currentWeek()) %% 52 + 1)  # Loop through weeks
-    })
-
-    # Observe the stop button
-    observeEvent(input$stopButton, {
-        currentWeek(NULL)  # Stop updating
-    })
-
-    # Display current week
-    output$weekIndicator <- renderText({
-        paste("Current Week:", currentWeek())
-    })
-
-    # Render the map
-    output$map <- renderLeaflet({
-        updateMap(currentWeek(), input$variableInput)
-    })
-
-    # Update the map reactively
-    observe({
-        if (!is.null(currentWeek())) {
-            output$map <- renderLeaflet({ updateMap(currentWeek(), input$variableInput) })
-        }
-    })
-}
-
-
-```
-
-```{r}
-shinyApp(ui = ui, server = server)
-```
-
-&&&
+The Shiny app is accessible through the Qmd file "SURV727 Final Project Report.qmd" in the Github link.
 
 ```{r}
 library(shiny)
 library(leaflet)
+library(htmlwidgets)
 
 ui <- fluidPage(
     titlePanel("Weather and SAD Google Search Trends Map"),
@@ -572,143 +469,56 @@ ui <- fluidPage(
             sliderInput("weekInput", "Select Week of the Year:", min = 1, max = 52, value = 1),
             sliderInput("snowfallInput", "Select Snowfall (mm):", min = 0, max = max(mich_df$weekavg_snow), value = median(mich_df$weekavg_snow)),
             sliderInput("daylightInput", "Select Daylight (hours):", min = min(mich_df$weekavg_hrs), max = max(mich_df$weekavg_hrs), value = median(mich_df$weekavg_hrs)),
-            selectInput("keywordInput", "Select Keyword:", choices = c("light therapy", "SAD", "winter blues")),
-            hr(),
-            verbatimTextOutput("infoBox")
         ),
         mainPanel(leafletOutput("map"))
     )
 )
 
-
 server <- function(input, output, session) {
 
-    # Initialize the leaflet map with a default view
     output$map <- renderLeaflet({
-        leaflet() %>% addTiles() %>% setView(lng = -84.5555, lat = 42.7325, zoom = 6)
+        leaflet() %>% 
+            addTiles() %>% 
+            setView(lng = -84.5555, lat = 42.7325, zoom = 6)
     })
 
     # Observe changes in year and week inputs to update sliders and map
     observe({
         # Filter data based on selected year and week
         filtered_data <- mich_df %>%
-            filter(year == input$yearInput, week == input$weekInput)
+            dplyr::filter(year == input$yearInput, week == input$weekInput)
 
-        # Update snowfall and daylight sliders
+        # Update snowfall and daylight sliders based on the filtered data
         if (nrow(filtered_data) > 0) {
-            updateSliderInput(session, "snowfallInput", value = median(filtered_data$weekavg_snow, na.rm = TRUE))
-            updateSliderInput(session, "daylightInput", value = median(filtered_data$weekavg_hrs, na.rm = TRUE))
+            updateSliderInput(session, "snowfallInput", 
+                              min = min(filtered_data$weekavg_snow, na.rm = TRUE), 
+                              max = max(filtered_data$weekavg_snow, na.rm = TRUE), 
+                              value = median(filtered_data$weekavg_snow, na.rm = TRUE))
+            updateSliderInput(session, "daylightInput", 
+                              min = min(filtered_data$weekavg_hrs, na.rm = TRUE), 
+                              max = max(filtered_data$weekavg_hrs, na.rm = TRUE), 
+                              value = median(filtered_data$weekavg_hrs, na.rm = TRUE))
         }
 
-        # Update map markers
+        # Update the map with new data
         leafletProxy("map", data = filtered_data) %>%
             clearMarkers() %>%
             addMarkers(~lng, ~lat, popup = ~paste("<strong>", city, "</strong><br>",
-                                                  "Light Therapy: ", `light_therapy`, "<br>",
+                                                  "Light Therapy: ", light_therapy, "<br>",
                                                   "SAD: ", SAD, "<br>",
-                                                  "Winter Blues: ", `winter_blues`))
-    })
-
-    # Update text box with average values
-    output$infoBox <- renderPrint({
-        if (nrow(filtered_data) > 0) {
-            info <- filtered_data %>%
-                summarise("Average Light Therapy Searches" = mean(`light therapy`, na.rm = TRUE),
-                          "Average SAD Searches" = mean(SAD, na.rm = TRUE),
-                          "Average Winter Blues Searches" = mean(`winter blues`, na.rm = TRUE))
-            return(info)
-        }
+                                                  "Winter Blues: ", winter_blues),
+                       popupOptions = popupOptions(closeButton = FALSE, autoClose = FALSE, closeOnClick = FALSE)) %>%
+            onRender("function(el, x) { 
+                        var map = this; 
+                        map.eachLayer(function(layer) { 
+                            if (layer.getPopup()) { 
+                                layer.openPopup(); 
+                            } 
+                        }); 
+                     }")
     })
 }
 
-
-```
-
-```         
-                  setView(lng = -84.7430, lat = 43.3148, zoom =7) #Coordinates for Michigan
-```
-
-```{r}
-shinyApp(ui = ui, server = server)
-```
-
-```{r, include=FALSE}
-#Trying Shiny app
-
-library(shiny)
-library(rsconnect)
-library(leaflet)
-
-# Shiny UI
-ui <- fluidPage(
-    titlePanel("Animated Weather and Google Search Trends"),
-
-    sidebarLayout(
-        sidebarPanel(
-            actionButton("playButton", "Play Animation"),
-            actionButton("stopButton", "Stop Animation")
-        ),
-        mainPanel(leafletOutput("map"))
-    )
-)
-
-server <- function(input, output, session) {
-    
-    # Reactive value to store the current week
-    currentWeek <- reactiveVal(1)
-
-    # Function to update the map
-    updateMap <- function() {
-        week <- currentWeek()
-        if (is.null(week)) {
-            return(NULL)
-        }
-
-        data <- mich_df %>%
-            filter(week == week)
-
-        pal <- colorNumeric(palette = "Blues", domain = mich_df$weekavg_snow)
-
-        leaflet(data) %>%
-            addTiles() %>%
-            setView(lng = -84.7430, lat = 43.3148, zoom =6.3) %>%  # Coordinates for Michigan
-            addCircleMarkers(~lng, ~lat, 
-                             radius = ~weekavg_hrs / 10, 
-                             color = ~pal(weekavg_snow),
-                             popup = ~paste("<strong>City:</strong>", city,
-                                            "<br><strong>Week:</strong>", week,
-                                            "<br><strong>Average Weekly Snow (mm):</strong>", weekavg_snow,
-                                            "<br><strong>Average Daily Daylight (hrs):</strong>", weekavg_hrs,
-                                            "<br><strong>Google Searches for \"light therapy\":</strong>", light_therapy,
-                                            "<br><strong>Google Searches for \"seasonal affective disorder\":</strong>", SAD,
-                                            "<br><strong>Google Searches for \"winter blues\":</strong>", winter_blues),
-                             fillOpacity = 0.8)
-        # Make sure to return the Leaflet map object at the end of this block
-    }
-    
-    # Observe the play button
-    observeEvent(input$playButton, {
-        invalidateLater(1000, session)  # Update the map every second (1000 milliseconds)
-        currentWeek(isolate(currentWeek()) %% 52 + 1)  # Loop through weeks
-    })
-
-    # Observe the stop button
-    observeEvent(input$stopButton, {
-        currentWeek(NULL)  # Stop updating
-    })
-
-   # Render the map
-    output$map <- renderLeaflet({
-        updateMap()
-    })
-
-    # Update the map reactively
-    observe({
-        if (!is.null(currentWeek())) {
-            output$map <- renderLeaflet({ updateMap() })
-        }
-    })
-}
 
 ```
 
@@ -716,41 +526,6 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 ```
 
-server \<- function(input, output) {
-
-```         
-output$map <- renderLeaflet({
-    data <- mich_df %>%
-        filter(city == input$cityInput, week == input$weekInput)
-
-    pal <- colorNumeric(palette = "Blues", domain = mich_df$weekavg_snow)
-
-    leaflet(data) %>%
-        addTiles() %>%
-        setView(lng = -84.7430, lat = 43.3148, zoom =6.3) %>%  # Coordinates for Michigan
-        addCircleMarkers(~lng, ~lat, 
-                         radius = ~weekavg_hrs / 10, 
-                         color = ~pal(weekavg_snow),
-                         popup = ~paste("<strong>City:</strong>", city,
-                                        "<br><strong>Week:</strong>", week,
-                                        "<br><strong>Average Weekly Snow (mm):</strong>", weekavg_snow,
-                                        "<br><strong>Average Daily Daylight (hrs):</strong>", weekavg_hrs,
-                                        "<br><strong>Google Searches for \"light therapy\":</strong>", light_therapy,
-                                        "<br><strong>Google Searches for \"seasonal affective disorder\":</strong>", SAD,
-                                        "<br><strong>Google Searches for \"winter blues\":</strong>", winter_blues),
-                         fillOpacity = 0.8)
-})
-```
-
-} \`\`\`
-
-# Server original
-
-server \<- function(input, output) {
-
-output$map <- renderLeaflet({  leaflet() %>%  addTiles() %>%  setView(lng = -83.7430, lat = 44.3148, zoom = 7) %>% # Coordinates for Michigan  addMarkers(data = mich_df, ~longitude, ~latitude,  popup = paste("Date: ", mich_df$date, "<br>", "City:", mich_df$city, "<br>",  "Weather: ", mich_df$average_daily_daylight, " hours of daylight, ", mich_df$average_daily_snow, " inches of snow", "<br>",  "Trends: Light Therapy - ", mich_df$light_therapy,", ","SAD - ", mich_df$seasonal_affective_disorder, ", ",  "Winter Blues - ", mich_df$winter_blues)) }) }
-
-shinyApp(ui, server)
 
 # Conclusion
 
