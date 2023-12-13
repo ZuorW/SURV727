@@ -455,7 +455,7 @@ SAD_bycity_grp %>% ggplot(aes(x= date)) +
 
 
 
-From Zhouer's code
+From Zhuoer's code
 ```{r}
 # head(trends)
 trends$Week = as.Date(trends$Week, "%m/%d/%y") # convert original data to a R readable format
@@ -476,3 +476,28 @@ ggplot(data = X17, aes(x= Week, group = 1))+
   geom_line(aes(y =light_therapy, color = "Light Therapy"), size =1.2) +
   theme(axis.text.x = element_text(size=10))
 ```
+
+
+< Draft >
+Data: What is the dataset you are obtaining? How did you obtain it? What are the characteristics of the dataset?
+
+Historical weather data was obtained through the publicly available Open-Meteo API (https://open-meteo.com).  We used the R package "openmeteo" to query daily total snowfall and daily daylight duration data between December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. Each row in the queried dataset is a day of the year with each day's weather variables as columns. The main variables of interest are snowfall and daylight duration. Snowfall is a numeric variable indicating the daily total snowfall in millimeters for each day. The average snowfall between 2018 and 2023 was 0.26 millimeters with a maximum of 25.55 millimeters. Daylight duration is a numeric variable representing the amount of seconds that daylight was present in each day. We converted the unit into hours, and daylight duration ranged from 9.00 to 15.36 hours with a mean of 12.24 hours across all years and cities.  
+
+Conclusion: What is your conclusion based on your analysis? What are possible limitations of your analysis?
+
+
+
+```{r}
+summary(weather$daily_snow)
+
+```
+
+
+
+
+
+
+
+
+
+
