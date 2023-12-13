@@ -442,7 +442,7 @@ SAD_bycity_grp <- SAD_bycity_grp %>%
 head(SAD_bycity_grp)
 ```
 
-Besides looking at the overall weather pattern across our time period of interest using interactive visualizations, we specifically looked at monthly frequencies for SAD-related search hits in 2018 using a static scatter plot to explore the monthly patterns in how people from different Michigan cities searched for SAD-related terms in 2018.
+Besides looking at the overall weather pattern across our time period of interest using interactive visualizations, we specifically looked at monthly frequencies for SAD-related search hits in 2018 using a static scatter plot to explore the monthly patterns in how people from different Michigan cities searched for SAD-related terms in 2018. Search frequencies seems to increase near colder months and decrease during warmer months.
 
 
 ```{r, echo=FALSE, warning=FALSE}
@@ -484,6 +484,168 @@ mich_df$lng <- ifelse(mich_df$city == "Detroit", -83.0458,
 )
 ```
 
+
+
+
+
+```{r}
+ui <- fluidPage(
+    titlePanel("Weather Trends Visualization - Animated"),
+
+    sidebarLayout(
+        sidebarPanel(
+            actionButton("playButton", "Play Animation"),
+            actionButton("stopButton", "Stop Animation"),
+            selectInput("variableInput", "Choose Variable:", choices = c("Daylight", "Snowfall")),
+            textOutput("weekIndicator")
+        ),
+        mainPanel(leafletOutput("map"))
+    )
+)
+
+server <- function(input, output, session) {
+    
+    # Reactive value for the current week
+    currentWeek <- reactiveVal(1)
+
+    # Update the map based on the selected variable
+    updateMap <- function(week, variable) {
+        if (is.null(week)) {
+            return(NULL)
+        }
+
+        data <- mich_df %>%
+            filter(week == week)
+
+        map <- leaflet(data) %>% addTiles()
+
+        if (variable == "Daylight") {
+            map <- map %>% addCircleMarkers(~lng, ~lat, radius = ~weekavg_hrs / 10,
+                                            color = "#FFA500", fillOpacity = 0.8)
+        } else {
+            map <- map %>% addCircleMarkers(~lng, ~lat, radius = ~weekavg_snow / 10,
+                                            color = "#0000FF", fillOpacity = 0.8)
+        }
+
+        return(map)
+    }
+
+    # Observe the play button
+    observeEvent(input$playButton, {
+        invalidateLater(1000, session)  # Update every second
+        currentWeek(isolate(currentWeek()) %% 52 + 1)  # Loop through weeks
+    })
+
+    # Observe the stop button
+    observeEvent(input$stopButton, {
+        currentWeek(NULL)  # Stop updating
+    })
+
+    # Display current week
+    output$weekIndicator <- renderText({
+        paste("Current Week:", currentWeek())
+    })
+
+    # Render the map
+    output$map <- renderLeaflet({
+        updateMap(currentWeek(), input$variableInput)
+    })
+
+    # Update the map reactively
+    observe({
+        if (!is.null(currentWeek())) {
+            output$map <- renderLeaflet({ updateMap(currentWeek(), input$variableInput) })
+        }
+    })
+}
+
+
+```
+
+
+
+```{r}
+shinyApp(ui = ui, server = server)
+```
+
+&&&
+```{r}
+library(shiny)
+library(leaflet)
+
+ui <- fluidPage(
+    titlePanel("Weather and SAD Google Search Trends Map"),
+
+    sidebarLayout(
+        sidebarPanel(
+            selectInput("yearInput", "Select Year:", choices = unique(mich_df$year)),
+            sliderInput("weekInput", "Select Week of the Year:", min = 1, max = 52, value = 1),
+            sliderInput("snowfallInput", "Select Snowfall (mm):", min = 0, max = max(mich_df$weekavg_snow), value = median(mich_df$weekavg_snow)),
+            sliderInput("daylightInput", "Select Daylight (hours):", min = min(mich_df$weekavg_hrs), max = max(mich_df$weekavg_hrs), value = median(mich_df$weekavg_hrs)),
+            selectInput("keywordInput", "Select Keyword:", choices = c("light therapy", "SAD", "winter blues")),
+            hr(),
+            verbatimTextOutput("infoBox")
+        ),
+        mainPanel(leafletOutput("map"))
+    )
+)
+
+
+server <- function(input, output, session) {
+
+    # Initialize the leaflet map with a default view
+    output$map <- renderLeaflet({
+        leaflet() %>% addTiles() %>% setView(lng = -84.5555, lat = 42.7325, zoom = 6)
+    })
+
+    # Observe changes in year and week inputs to update sliders and map
+    observe({
+        # Filter data based on selected year and week
+        filtered_data <- mich_df %>%
+            filter(year == input$yearInput, week == input$weekInput)
+
+        # Update snowfall and daylight sliders
+        if (nrow(filtered_data) > 0) {
+            updateSliderInput(session, "snowfallInput", value = median(filtered_data$weekavg_snow, na.rm = TRUE))
+            updateSliderInput(session, "daylightInput", value = median(filtered_data$weekavg_hrs, na.rm = TRUE))
+        }
+
+        # Update map markers
+        leafletProxy("map", data = filtered_data) %>%
+            clearMarkers() %>%
+            addMarkers(~lng, ~lat, popup = ~paste("<strong>", city, "</strong><br>",
+                                                  "Light Therapy: ", `light_therapy`, "<br>",
+                                                  "SAD: ", SAD, "<br>",
+                                                  "Winter Blues: ", `winter_blues`))
+    })
+
+    # Update text box with average values
+    output$infoBox <- renderPrint({
+        if (nrow(filtered_data) > 0) {
+            info <- filtered_data %>%
+                summarise("Average Light Therapy Searches" = mean(`light therapy`, na.rm = TRUE),
+                          "Average SAD Searches" = mean(SAD, na.rm = TRUE),
+                          "Average Winter Blues Searches" = mean(`winter blues`, na.rm = TRUE))
+            return(info)
+        }
+    })
+}
+
+
+```
+
+                      setView(lng = -84.7430, lat = 43.3148, zoom =7) #Coordinates for Michigan
+
+```{r}
+shinyApp(ui = ui, server = server)
+```
+
+
+
+
+
+
+
 ```{r, include=FALSE}
 #Trying Shiny app
 
@@ -493,17 +655,80 @@ library(leaflet)
 
 # Shiny UI
 ui <- fluidPage(
-    titlePanel("Weather and Google Search Trends"),
+    titlePanel("Animated Weather and Google Search Trends"),
 
     sidebarLayout(
         sidebarPanel(
-            selectInput("cityInput", "Choose a City:", choices = unique(mich_df$city)),
-            sliderInput("weekInput", "Select Week:", min = 1, max = 52, value = 1)
+            actionButton("playButton", "Play Animation"),
+            actionButton("stopButton", "Stop Animation")
         ),
         mainPanel(leafletOutput("map"))
     )
 )
 
+server <- function(input, output, session) {
+    
+    # Reactive value to store the current week
+    currentWeek <- reactiveVal(1)
+
+    # Function to update the map
+    updateMap <- function() {
+        week <- currentWeek()
+        if (is.null(week)) {
+            return(NULL)
+        }
+
+        data <- mich_df %>%
+            filter(week == week)
+
+        pal <- colorNumeric(palette = "Blues", domain = mich_df$weekavg_snow)
+
+        leaflet(data) %>%
+            addTiles() %>%
+            setView(lng = -84.7430, lat = 43.3148, zoom =6.3) %>%  # Coordinates for Michigan
+            addCircleMarkers(~lng, ~lat, 
+                             radius = ~weekavg_hrs / 10, 
+                             color = ~pal(weekavg_snow),
+                             popup = ~paste("<strong>City:</strong>", city,
+                                            "<br><strong>Week:</strong>", week,
+                                            "<br><strong>Average Weekly Snow (mm):</strong>", weekavg_snow,
+                                            "<br><strong>Average Daily Daylight (hrs):</strong>", weekavg_hrs,
+                                            "<br><strong>Google Searches for \"light therapy\":</strong>", light_therapy,
+                                            "<br><strong>Google Searches for \"seasonal affective disorder\":</strong>", SAD,
+                                            "<br><strong>Google Searches for \"winter blues\":</strong>", winter_blues),
+                             fillOpacity = 0.8)
+        # Make sure to return the Leaflet map object at the end of this block
+    }
+    
+    # Observe the play button
+    observeEvent(input$playButton, {
+        invalidateLater(1000, session)  # Update the map every second (1000 milliseconds)
+        currentWeek(isolate(currentWeek()) %% 52 + 1)  # Loop through weeks
+    })
+
+    # Observe the stop button
+    observeEvent(input$stopButton, {
+        currentWeek(NULL)  # Stop updating
+    })
+
+   # Render the map
+    output$map <- renderLeaflet({
+        updateMap()
+    })
+
+    # Update the map reactively
+    observe({
+        if (!is.null(currentWeek())) {
+            output$map <- renderLeaflet({ updateMap() })
+        }
+    })
+}
+
+```
+
+```{r}
+shinyApp(ui = ui, server = server)
+```
 
 
 server <- function(input, output) {
@@ -532,10 +757,6 @@ server <- function(input, output) {
 }
 ```
 
-```{r}
-shinyApp(ui = ui, server = server)
-```
-
 
 # Server original
 server <- function(input, output) {
@@ -561,7 +782,9 @@ shinyApp(ui, server)
 
 ### Findings
 
+We explored whether changes in sunlight duration and total snowfall had similar patterns with changes in search frequencies in SAD-related terms. Looking at the overall trend, search frequencies in all three keywords seem to rise during the winter and fall back during the summer. Search frequencies for "light therapy" was higher relative to "SAD" and "winter blues". This may be explained by lockdown policies during the COVID-19 pandemic. Notably, unusually high frequencies concentrated around April 2020, which matches with the timeline of lockdown enforcement. The pandemic and lockdowns may have had an additional effect on people’s mood.
 
+Michigan weather data demonstrated that less daylight and more snow is seen in the fall and winter months. Daylight duration seems to peak around July and shorter daylight duration is seen in the winter months from approximately October to March. In combination with the Google search trends, we observed similar patterns in the data. SAD-related words were searched more frequently in the fall and winter months when there was more snow and less daylight compared to warmer months.
 
 ### Limitations
 
