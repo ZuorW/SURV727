@@ -481,14 +481,24 @@ ggplot(data = X17, aes(x= Week, group = 1))+
 < Draft >
 Data: What is the dataset you are obtaining? How did you obtain it? What are the characteristics of the dataset?
 
-Historical weather data was obtained through the publicly available Open-Meteo API (https://open-meteo.com).  We used the R package "openmeteo" to query daily total snowfall and daily daylight duration data between December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. Each row in the queried dataset is a day of the year with each day's weather variables as columns. The main variables of interest are snowfall and daylight duration. Snowfall is a numeric variable indicating the daily total snowfall in millimeters for each day. The average snowfall between 2018 and 2023 was 0.26 millimeters with a maximum of 25.55 millimeters. Daylight duration is a numeric variable representing the amount of seconds that daylight was present in each day. We converted the unit into hours, and daylight duration ranged from 9.00 to 15.36 hours with a mean of 12.24 hours across all years and cities.  
+  Historical weather data was obtained through the publicly available Open-Meteo API (https://open-meteo.com).  We used the R package "openmeteo" to query daily total snowfall and daily daylight duration data between December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. Each row in the queried dataset is a day of the year with each day's weather variables as columns. The main variables of interest are snowfall and daylight duration. Snowfall is a numeric variable indicating the total amount of snowfall in millimeters for each day. The average snowfall between 2018 and 2023 was 0.26 millimeters with a maximum of 25.55 millimeters. Daylight duration is a numeric variable representing the amount of seconds that daylight was present in each day. We converted the unit into hours, and daylight duration ranged from 9.00 to 15.36 hours with a mean of 12.24 hours across all years and cities.  The average daily daylight did not varied very little by year; while there was slightly more variation in snowfall by year, it did not vary by more than 0.06 millimeters.
+  In order to capture SAD-related indicators over time, Google search frequency trends data was obtained through the R package "gtrendsR" for December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. rows...
+  
+  
 
 Conclusion: What is your conclusion based on your analysis? What are possible limitations of your analysis?
 
+our conclusion...
 
+  The current analysis has some limitations. One concern is unknown confounding variables that may play a large role in the relationship between daylight, snowfall, and changes in the public's interest of SAD-related topics reflected by Google search trends. Although some research suggesting that vitamin D synthesis in the body from sunlight affects or improves one's mood has gained popularity in recent years, supporting our analysis of Google search trends and weather data, the intent behind users' searches are not clear. Furthermore, higher or lower search hits do not directly reflect the actual number of diagnoses or people experiencing SAD-related symptoms. Thus, we cannot make strong or holistic conclusions about the link between weather and increase in SAD interest or diagnoses. 
+  A second limitation is the nature of the Google trends data. Search trend hits were aggregated by week while hourly data was available for weather. Higher granulated data of search hits may reveal different patterns. Moreover, search hit frequencies were low for many cities and days which lead to missing data. Different sets of keywords may have better success in gathering more data and uncovering different information, but the task of choosing the appropriate keywords is challenging. Since mood is a factor in the link between weather and SAD, an additional analysis such as a sentiment analysis of Internet users' mood over the year may provide more nuance in our conclusions.
+  
 
 ```{r}
-summary(weather$daily_snow)
+weather %>% 
+  group_by(year) %>% 
+  summarise(daylight = mean(daylight_hrs),
+            snow = mean(daily_snow))
 
 ```
 
