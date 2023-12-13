@@ -243,7 +243,8 @@ colnames(mich_df)
 
 ### Weather Data
 
-We created interactive multi-line plots using the "plotly" and "ggplot2" packages in R. The key rationale behind the usage of these interactive data visualizations is to grant users the flexibility to explore and scrutinize the weather pattern within their desired time span more intimately. Because there are many small data points, we believe an interactive tool makes navigating patterns easier in the data as well. We started with the '**Average Weekly Snowfall from 12/1/2017- 12/1/2023**' and '**Average Weekly Daylight from 12/1/2017- 12/1/2023**' to examine how snowfall pattern and daylight duration change throughout our selected period for selected cities in Michigan.
+We created interactive multi-line plots using the "plotly" and "ggplot2" packages in R. The key rationale behind the usage of these interactive data visualizations is to grant users the flexibility to explore and scrutinize the weather pattern within their desired time span more intimately. Because there are many small data points, we believe an interactive tool makes navigating patterns easier in the data as well. We started with the '**Average Weekly Snowfall from 12/1/2017- 12/1/2023**' and '**Average Weekly Daylight from 12/1/2017- 12/1/2023**' to examine how snowfall pattern and daylight duration change throughout our selected period for selected cities in Michigan. Those interactive visualizations are accessible through the Qmd file “SURV727 Final Project Report.qmd” inthe Github link.
+
 
 ```{r, echo=FALSE, message=FALSE}
 library(ggplot2)
