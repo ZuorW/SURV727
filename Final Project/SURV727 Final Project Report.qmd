@@ -118,7 +118,7 @@ weather_daylight <- weather_history(i,
 }
 ```
 
-```{r, echo=FALSE}
+```{r, echo = FALSE}
 head(daylight_dataframes$Detroit, n = 3)
 ```
 
@@ -443,7 +443,6 @@ head(SAD_bycity_grp)
 ```
 
 Besides looking at the overall weather pattern across our time period of interest using interactive visualizations, we specifically looked at monthly frequencies for SAD-related search hits in 2018 using a static scatter plot to explore the monthly patterns in how people from different Michigan cities searched for SAD-related terms in 2018. Search frequencies seems to increase near colder months and decrease during warmer months.
-
 
 ```{r, echo=FALSE, warning=FALSE}
 SAD_bycity_grp %>% ggplot(aes(x= date)) +
