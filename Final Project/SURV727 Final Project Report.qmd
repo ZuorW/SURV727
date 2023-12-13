@@ -1,6 +1,6 @@
 ---
 title: "SURV727 Final Project Report"
-author: "Akari Oya, Zhouer Wang"
+author: "Akari Oya, Zhuoer Wang"
 format: pdf
 bibliography: ref.bib
 ---
@@ -13,27 +13,30 @@ library(openmeteo)
 library(gtrendsR)
 ```
 
-## Introduction:
+# Introduction:
 
 ### Literature Revieiw
 
-Seasonal Affective Disorder (SAD) is a form of depression that typically appears during fall and winter, as the amount of natural sunlight decreases. This mood disorder affects millions of people across the globe, with varying degrees of severity. It is associated with a range of symptoms, including low energy, sleep problems, and even suicidal ideation in more severe cases [@PsychiatryOrg]. Remarkably, populations residing in the northern regions, such as Michigan, where winters are acute and sunlight is often sparse, observe a higher prevalence of SAD.
+Seasonal Affective Disorder (SAD) is a form of depression that typically appears during fall and winter, as the amount of natural sunlight decreases. This mood disorder affects millions of people across the globe, with varying degrees of severity. It is associated with a range of symptoms, including low energy, sleep problems, and even suicidal ideation in more severe cases [@PsychiatryOrg]. Remarkably, populations residing in the northern U.S. regions, such as Michigan, where winters are acute and sunlight is often sparse, observe a higher prevalence of SAD.
 
 One of the most notable exacerbating factors for SAD is weather, specifically less sunlight and increased snowfall. Prior studies have suggested a possible correlation, with many individuals reporting a decline in their moods [@Postolache2011] or mental health during periods of increased snowfall or reduced sunlight [@Langer2023]. Hence, understanding the relationship between weather patterns and SAD prevalence could yield meaningful insights for health professionals, guiding the development of targeted interventions to mitigate the impact of SAD.
 
-While there is a body of literature exploring different facets of SAD, there is a paucity of research specifically focused on assessing the relationship between weather patterns and SAD. The novel approach of examining depression-related Google search terms in relation to weather conditions in Michigan further emphasizes the uniqueness and significance of our study.
+In order to gauge the public's interest in SAD, we propose the use of Google Trends data. Google Trends provides "access to a largely unfiltered sample of actual search requests made to Google" that is anonymized, categorized, and aggregated. This tools allows us to examine interest in a particular topic from at the city, state, or country level through search frequencies of keywords [@GoogleTrends].
+
+While there is a body of literature exploring different facets of SAD, there is a lack of research specifically focused on assessing the relationship between weather patterns and SAD. The novel approach of examining depression-related Google search terms in relation to weather conditions in Michigan further emphasizes the uniqueness and significance of our exploratory study.
 
 ### Research Question:
 
 Are there any patterns in depression-related Google searches by weather in Michigan?
 
-## Data
 
-To understand potential patterns in depression-related Google searches by weather in Michigan, we collected weather data and Google search frequencies for depression-related search terms.
+# Data
+
+To understand potential patterns in depression-related Google searches by weather in Michigan, we collected weather data and Google search frequencies for SAD-related search terms using APIs.
 
 ### Open Meteo API
 
-Historical weather data was obtained through the publicly available Open-Meteo API (https://open-meteo.com). We used the R package "openmeteo" to query daily total snowfall and daily daylight duration data between December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. Each row in the queried dataset is a day of the year with each day's weather variables as columns. The main variables of interest are snowfall and daylight duration. Daylight duration is a numeric variable representing the amount of seconds that daylight was present in each day. We converted the unit into hours, and daylight duration ranged from 9.00 to 15.36 hours with a mean of 12.24 hours across all years and cities.
+Historical weather data was obtained through the publicly available Open-Meteo API (https://open-meteo.com). We used the R package "openmeteo" to query daily total snowfall and daily daylight duration data between December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. Each row in the queried dataset is a day of the year with each day's weather variables as columns. Below is a snippet of the datset. The main variables of interest are snowfall and daylight duration. Daylight duration is a numeric variable representing the amount of seconds that daylight was present in each day. We converted the unit into hours, and daylight duration ranged from 9.00 to 15.36 hours with a mean of 12.24 hours across all years and cities. 
 
 ```{r, include = FALSE}
 # For daylight duration
@@ -116,7 +119,7 @@ weather_daylight <- weather_history(i,
 ```
 
 ```{r, echo=FALSE}
-head(daylight_dataframes)
+head(daylight_dataframes$Detroit, n = 3)
 ```
 
 Snowfall is a numeric variable indicating the total amount of snowfall in millimeters for each day. The average snowfall between 2018 and 2023 was 0.26 millimeters with a maximum of 25.55 millimeters.
@@ -180,7 +183,7 @@ snow_long <- bind_rows(snow_dataframes)
 head(snow_long)
 ```
 
-The average daily daylight did not varied very little by year; while there was slightly more variation in snowfall by year, it did not vary by more than 0.06 millimeters.
+These trends in daylight and snowfall were relatively stable over the five year period. The average daily daylight did not vary very much by year. While there was slightly more variation in snowfall by year, the average daily snowfall did not vary by more than 0.06 millimeters from year to year. Below is a snippet of the dataset after cleaning the data.
 
 ```{r, include = FALSE}
 # Combining daylight and snowfall data
@@ -190,12 +193,12 @@ colnames(weather)
 ```
 
 ```{r, echo=FALSE}
-head(weather)
+head(weather, n = 3)
 ```
 
-###Google trends
+### Google trends
 
-In order to capture SAD-related indicators over time, Google search frequency trends data was obtained through the R package "gtrendsR" for December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. **rows... (??????)**
+In order to capture public interest in SAD-related indicators over time, Google search frequency trends data was obtained through the R package "gtrendsR" for December 1, 2017 to December 1, 2023 from the following cities to represent different parts of Michigan (excluding the Upper Peninsula): Ann Arbor, Detroit, Lansing, Grand Rapids, and Kalamazoo. We queried the keywords, "light therapy," "Seasonal Affective Disorder", and "winter blues". In addition to "SAD", we believed including one of its non-clinical names (winter blues) and a related popular remedy (light therapy) as key terms would help capture people's interests in SAD. We formatted the dataset so that the each row represented dates by weeks and columns represented keywords with search frequency in the cells. Below is a snippet of the datset. 
 
 ```{r, include=FALSE}
 # google trends data
@@ -237,14 +240,14 @@ head(mich_df)
 colnames(mich_df) 
 ```
 
-## Analysis:
+
+# Analysis:
 
 ### Weather Data
 
-We created interactive multi-line plots using both plotly and ggplot2 packagea in R. The key rationale behind the usage of these interactive data visualizations is to grant users the flexibility to navigate and scrutinize the weather pattern within their desired time span more intimately. We started with the '**Average Weekly Snowfall from 12/1/2017- 12/1/2023**' and '**Average Weekly Daylight from 12/1/2017- 12/1/2023**' to examine how snowfall pattern and daylight durations change throughout our selected period for selected cities in Michigan.
+We created interactive multi-line plots using the "plotly" and "ggplot2" packages in R. The key rationale behind the usage of these interactive data visualizations is to grant users the flexibility to explore and scrutinize the weather pattern within their desired time span more intimately. Because there are many data points, we believe an interactive tool makes navigating patterns easier in the data as well. We started with the '**Average Weekly Snowfall from 12/1/2017- 12/1/2023**' and '**Average Weekly Daylight from 12/1/2017- 12/1/2023**' to examine how snowfall pattern and daylight duration change throughout our selected period for selected cities in Michigan.
 
-```{r, echo=FALSE}
-
+```{r, echo=FALSE, warning=FALSE}
 library(ggplot2)
 library(plotly)
 
@@ -271,9 +274,12 @@ p2 <- ggplotly(p2)
 print(p2)
 ```
 
+
 ### Google Search Frequencies
 
-```{r, include=FALSE}
+We initially looked at interest by city data (shown below) after querying for data from the whole state of Michigan. "Light therapy" had the highest search frequency throughout the years. Peaks for each word seems to overlap during similar time frames, in the fall and winter months. 
+
+```{r, echo=FALSE, eval=FALSE}
 # For Google Trends data
 
 # Query keywords
@@ -282,9 +288,10 @@ SADtrends <- gtrends(c("light therapy", "seasonal affective disorder", "winter b
                geo = "US-MI", 
                time = "2017-12-01 2023-12-01", 
                low_search_volume = TRUE)
-plot(SADtrends)
+```
 
-# Grab each dataset and save as CSV in case we have issues querying again
+```{r, include=FALSE, eval=FALSE}
+# Save each dataset as CSV so we don't lose the data since we keep having issues with GTrends
 # interest by city
 trends_city <- SADtrends$interest_by_city
 write.csv(rest_city, "SADtrends_interest_by_city.csv")
@@ -302,6 +309,19 @@ trends_related <- SADtrends$related_queries
 write.csv(trends_related, "SADtrends_related_queries.csv")
 ```
 
+```{r, include=FALSE}
+# Read in CSV
+trends_time <- read_csv("SADtrends_interest_over_time.csv")
+trends_city <- read_csv("SADtrends_interest_by_city.csv")
+```
+
+```{r, echo=FALSE}
+# Trends over time plot
+trends_time %>% 
+  ggplot(aes(x = date, y = hits)) + 
+  geom_line(aes(y = hits, color = keyword)) +
+  ggtitle("Search Frequencies between 2018-2023") + xlab("Date") + ylab("Hits Frequency")
+```
 
 ```{r, include=FALSE}
 # Examining interest over city data
@@ -312,18 +332,18 @@ city_ranking <- trends_city %>%
               values_from = hits)
 ```
 
-Initially, we lookat Interest by city data (shown below) and we find that this data seems not to have a lot of data points.
+However, the state-wide data had a lot of missing data in search hits for our keywords. In particular, only the term "seasonal affective disorder" had search hits data.
 
 ```{r, echo=FALSE}
-# See data sorted by hits
-head(sort(city_ranking$`light therapy`, decreasing = TRUE))
-head(sort(city_ranking$`seasonal affective disorder`, decreasing = TRUE)) # this column seems to be the only one with data points
-head(sort(city_ranking$`winter blues`, decreasing = TRUE))
+city_ranking %>% 
+  arrange(desc(`seasonal affective disorder`)) %>% 
+  head(n=5)
 ```
 
-Therefore, we try another method, to query each major city separately. There is no manual for which geo code to use for Michigan cities, but the URL on the gtrends website after selecting the filters displays a geo code. We endup using this to see if it will pick up more specific data (For example: https://trends.google.com/trends/explore?date=2017-12-01%202023-12-01&*geo=US-MI*-540&q=light%20therapy&hl=en-US).
+Therefore, we tried another method: query each major city separately. There is no manual available for geo codes of Michigan cities, but the URL on the Google Trends website after selecting city filters displays an embedded geo code. We used these codes to see more specific data could be queried (For example: https://trends.google.com/trends/explore?date=2017-12-01%202023-12-01&*geo=US-MI-540*&q=light%20therapy&hl=en-US). We were able to find data for major Michigan cities, although some of them were group together (i.e., GrandRapids, Kalamazoo, and BattleCreek had one geo code).
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval = FALSE}
+# Querying for Detroit only
 detroit_trends <- gtrends(c("light therapy", "seasonal affective disorder", "winter blues"), 
                geo = "US-MI-505", # geo code for Detroit from gtrends website URL 
                time = "2017-12-01 2023-12-01", 
@@ -335,12 +355,12 @@ head(detroit_trends$interest_over_time)
 write.csv(detroit_trends$interest_over_time, "SADtrends_Detroit.csv") # save as csv
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, eval=FALSE}
 #Repeat with other cities (creating a loop gave me the connection error message)
 
 # List of city geo codes taken from gtrends URL
 # Lansing = "US-MI-551"
-# Alpena = "US-MI-583" - did not have any data, excluded
+# Alpena = "US-MI-583" - did not have any data, excluded from final analysis
 # Flint-Saginaw-BayCity = "US-MI-513"
 # GrandRapids-Kalamazoo-BattleCreek = "US-MI-563"
 # Marquette = "US-MI-553"
@@ -387,11 +407,18 @@ summary(SAD_bycity)
 write.csv(SAD_bycity, "SADtrends_bycity.csv") # save as csv
 ```
 
+
+```{r, include=FALSE}
+# Load CSV data
+SAD_bycity <- read_csv("SADtrends_bycity.csv")
+```
+
+
 ```{r, include=FALSE}
 # Clean data
 SAD_bycity_grp <- SAD_bycity %>% 
   mutate(date = as.Date(date, format = "%Y-%m/%d")) %>% 
-  select(-c(time, gprop, category, interest_by_city)) %>% #remove unnecessary variables
+  select(-c(time, gprop, category)) %>% #remove unnecessary variables
   mutate(year = substr(date, 1,4)) %>% #create year variable
   mutate(month = substr(date,6,7)) %>% #create month variable  
   group_by(date, geo, year, month, keyword) %>%
@@ -414,19 +441,48 @@ SAD_bycity_grp <- SAD_bycity_grp %>%
 head(SAD_bycity_grp)
 ```
 
-Unlike looking at the overall weather pattern across our period of interest using interactive visualizations, we specifically looked at "Monthly freqeuncies for SAD-related search hits in 2018" using a static muti-line plot here to explore the monthyl pattern about how people from different Michigan cities search for SAD-related terms in 2018.
-```{r, echo=FALSE}
+Besides looking at the overall weather pattern across our time period of interest using interactive visualizations, we specifically looked at monthly frequencies for SAD-related search hits in 2018 using a static scatter plot to explore the monthly patterns in how people from different Michigan cities searched for SAD-related terms in 2018.
+
+```{r, echo=FALSE, warning=FALSE}
 SAD_bycity_grp %>% ggplot(aes(x= date)) +
-  geom_line(aes(y = `light therapy`, color = "Light Therapy"), linewidth = 1.2)+
-  geom_line(aes(y = `winter blues`, color = "Winter Blues"), linewidth = 1.2) +
-  geom_line(aes(y = `seasonal affective disorder`, color = "Seasonal Affective Disorder"), linewidth = 1.2) + 
+  geom_point(aes(y = `light therapy`, color = "Light Therapy"), linewidth = 1.2)+
+  geom_point(aes(y = `winter blues`, color = "Winter Blues"), linewidth = 1.2) +
+  geom_point(aes(y = `seasonal affective disorder`, color = "Seasonal Affective Disorder"), linewidth = 1.2) + 
   scale_x_date(limits = as.Date(c("2018-01-01","2018-12-31"))) +
   ggtitle("Monthly freqeincies for SAD-related search hits in 2018") + xlab("Month") + ylab("Search hits")
 ```
 
+
 ### Weather Data + Google Search Frequencies
-Finally, we created another interactive visualization us through shiny package in R. This interactive map is centered at the coordinates for Michigan and places markers at locations based on longitude and latitude. When a user clicks on a marker, a popup will display with information about the date, city, average daylight, snowfall, and search frequencies for SAD-related terms.
-```{r, echo=FALSE}
+Finally, we created another interactive visualization through the "shiny" package in R. This interactive map is centered at the coordinates for Michigan and places city markers at locations based on longitude and latitude. When a user clicks on a marker, a popup will display with information about the date, city, average daylight, snowfall, and search frequencies for SAD-related terms.
+
+The Shiny app is accessible at: <link>
+
+```{r}
+# First, add necessary info for Shiny 
+# Add latitude and longitude conditionally based on the city
+mich_df$latitude <- ifelse(mich_df$city == "Detroit", 42.3314,
+                            ifelse(mich_df$city == "Ann Arbor", 42.2808,
+                                   ifelse(mich_df$city == "Lansing", 42.7325,
+                                          ifelse(mich_df$city == "Grand Rapids", 42.9634,
+                                                 ifelse(mich_df$city == "Kalamazoo", 42.2917, NA)
+                                          )
+                                   )
+                            )
+)
+
+mich_df$longitude <- ifelse(mich_df$city == "Detroit", -83.0458,
+                             ifelse(mich_df$city == "Ann Arbor", -83.7430,
+                                    ifelse(mich_df$city == "Lansing", -84.5555,
+                                           ifelse(mich_df$city == "Grand Rapids", -85.6681,
+                                                  ifelse(mich_df$city == "Kalamazoo", -85.5872, NA)
+                                           )
+                                    )
+                             )
+)
+```
+
+```{r, include=FALSE}
 #Trying Shiny app
 
 library(shiny)
@@ -460,13 +516,17 @@ server <- function(input, output) {
 shinyApp(ui, server)
 ```
 
-## Conclusion:
+# Conclusion
 
-### Findings:
+### Findings
 
 
-### Limitations: 
 
-The current analysis has some limitations. One concern is unknown confounding variables that may play a large role in the relationship between daylight, snowfall, and changes in the public's interest of SAD-related topics reflected by Google search trends. It important to note that we adopted common terms assaociated with SAD as our search keys for Google trend, so it is not a comprehensive lists of SAD-related terms. Although some research [@hoang2011association] suggesting that vitamin D synthesis in the body from sunlight affects or improves one's mood has gained popularity in recent years, supporting our analysis of Google search trends and weather data, the intent behind users' searches are not clear. Furthermore, higher or lower search hits do not directly reflect the actual number of diagnoses or people experiencing SAD-related symptoms. Thus, we cannot make strong or holistic conclusions about the link between weather and increase in SAD interest or diagnoses. A second limitation is the nature of the Google trends data. Search trend hits were aggregated by week while hourly data was available for weather. Higher granulated data of search hits may reveal different patterns. Moreover, search hit frequencies were low for many cities and days which lead to missing data. Different sets of keywords may have better success in gathering more data and uncovering different information, but the task of choosing the appropriate keywords is challenging. Since mood is a factor in the link between weather and SAD, an additional analysis such as a sentiment analysis of Internet users' mood over the year may provide more nuance in our conclusions.
+### Limitations
 
-## References:
+The current analysis has some limitations. One concern is unknown confounding variables that may play a large role in the relationship between daylight, snowfall, and changes in the public's interest of SAD-related topics reflected by Google search trends. It important to note that we adopted common terms assaociated with SAD as our search keys for Google trend, so it is not a comprehensive lists of SAD-related terms. Although some research [@hoang2011association] suggesting that vitamin D synthesis in the body from sunlight affects or improves one's mood has gained popularity in recent years, supporting our analysis of Google search trends and weather data, the intent behind users' searches are not clear. Furthermore, higher or lower search hits do not directly reflect the actual number of diagnoses or people experiencing SAD-related symptoms. Thus, we cannot make strong or holistic conclusions about the link between weather and increase in SAD interest or prevalence. 
+
+A second limitation is the nature of the Google trends data. Search trend hits were aggregated by week while hourly data was available for weather. Higher granulated data of search hits may reveal different patterns. Moreover, search hit frequencies were low for many cities and days which lead to missing data. Different sets of keywords may have better success in gathering more data and uncovering different information, but the task of choosing the appropriate keywords is challenging. Since mood is a factor in the link between weather and SAD, an additional analysis such as a sentiment analysis of Internet users' mood over the year may provide more nuance in our conclusions.
+
+# References
+
