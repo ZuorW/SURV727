@@ -455,6 +455,29 @@ SAD_bycity_grp %>% ggplot(aes(x= date)) +
 Finally, we created another interactive visualization through the "shiny" package in R. This interactive map is centered at the coordinates for Michigan and places city markers at locations based on longitude and latitude. Sliders change dynamically based on the year and week chosen. When a user clicks on a marker, a popup will display with information about the search frequencies for SAD-related terms.
 
 The Shiny app is accessible through the Qmd file "SURV727 Final Project Report.qmd" in the Github link.
+```{r, include=FALSE}
+# First, add necessary info for Shiny 
+# Add latitude and longitude conditionally based on the city
+mich_df$lat <- ifelse(mich_df$city == "Detroit", 42.3314,
+                            ifelse(mich_df$city == "Ann Arbor", 42.2808,
+                                   ifelse(mich_df$city == "Lansing", 42.7325,
+                                          ifelse(mich_df$city == "Grand Rapids", 42.9634,
+                                                 ifelse(mich_df$city == "Kalamazoo", 42.2917, NA)
+                                          )
+                                   )
+                            )
+)
+
+mich_df$lng <- ifelse(mich_df$city == "Detroit", -83.0458,
+                             ifelse(mich_df$city == "Ann Arbor", -83.7430,
+                                    ifelse(mich_df$city == "Lansing", -84.5555,
+                                           ifelse(mich_df$city == "Grand Rapids", -85.6681,
+                                                  ifelse(mich_df$city == "Kalamazoo", -85.5872, NA)
+                                           )
+                                    )
+                             )
+)
+```
 
 ```{r, include = FALSE}
 library(shiny)
